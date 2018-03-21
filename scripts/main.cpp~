@@ -40,28 +40,15 @@
 #include "armadillo"
 #include "pca.cpp"
 
-std::ofstream ofile;
-std::ifstream ifile;
-
-double function(double* x, int n){
-	int length = n;
-	double sum = 0.0;
-	unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
-	std::default_random_engine generator(seed);
-	std::normal_distribution<double> dist(0.0,0.5);
-
-	for(int i=0;i<length;i++){
-		sum += x[i] + dist(generator);
-	}
-	return sum;
-}
-	
-
 int main(int argc, char* argv[]){
   int reps, dims,observables,lines,runs;
   int i,j,k;
   std::string *infilename, outfilename;
-	
+  std::ofstream ofile;
+  std::ifstream ifile;
+
+  observables=6;
+  
   if(argc<4+observables){
     std::cout << "Improper input. Enter also 'lines runs ifn* ofn' on same line." << std::endl;
     exit(1);
@@ -76,31 +63,31 @@ int main(int argc, char* argv[]){
     }
     outfilename = argv[3+observables];
   }
-  for(i=0;i<observables;i++){
-    printf("%s",infilename[i].c_str());
-  }
 
   //initialize required vectors and matrices
   arma::mat *val_matrix,*tval_matrix,*cov_matrix,*eigvec_matrix;
   arma::vec *mean_vec;
 
+  val_matrix = new arma::mat[observables];
   for(i=0;i<observables;i++){
-    val_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
-    tval_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
-    cov_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
-    eigvec_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    val_matrix[i] = arma::zeros<arma::mat>(lines,runs);
+    //    tval_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    //    cov_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    //    eigvec_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
   }
-  /*  
+  float number;
   //initialize matrices and arrays
-  for(i=0;i<observables){
+  for(i=0;i<observables;i++){
     ifile.open(infilename[i]);
+    printf("%s\n",infilename[i].c_str());
     for(j=0;j<lines;j++){
       for(k=0;k<runs;k++){
-	ifile >> val_matrix[i](i,j);
+	ifile >> number;
+	val_matrix[i](i,j) = number;
       }
     }
     ifile.close();
-    val_matrix[i].print();
+    printf("%d\n",i);
   }
 
   //calculate the PCA Transformed matrix
@@ -108,11 +95,12 @@ int main(int argc, char* argv[]){
   //  val_matrix = calculate_ttovalmatrix_function(tval_matrix, eigvec_matrix, mean_vec, cov_matrix);
 
   //write output to file
-  writeFile("val.dat",val_matrix);
-  writeFile("tval.dat",tval_matrix);
-  */
-  delete[] val_matrix, tval_matrix, cov_matrix, eigvec_matrix, mean_vec;
+  //  writeFile("val.dat",val_matrix);
+  //  writeFile("tval.dat",tval_matrix);
 
+  delete[] val_matrix;//, tval_matrix, cov_matrix, eigvec_matrix, mean_vec;
+  delete[] infilename;
+  
   return 0;
 
 }

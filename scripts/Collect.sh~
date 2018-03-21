@@ -7,7 +7,7 @@
 path='../model_output/'
 runs=`ls -d ${path}run* | wc -l`
 ls ../model_output/run0000 | sort | tail -n +3 | head -6 > names.dat
-lines=`wc -l names.dat`
+lines=`wc -l < names.dat`
 for((i=1;i<$lines+1;i++))
 do
     names=`cut -d $'\n' -f $i names.dat`

@@ -39,9 +39,9 @@
 #include<string>
 #include "armadillo"
 #include "pca.cpp"
-#include "gaussianprocess.cpp"
 
 std::ofstream ofile;
+std::ifstream ifile;
 
 double function(double* x, int n){
 	int length = n;
@@ -58,51 +58,61 @@ double function(double* x, int n){
 	
 
 int main(int argc, char* argv[]){
-	int 	reps, dims,
-			i, j;
-	unsigned seed;
-	double random;
-
-	if(argc<3){
-		std::cout << "Improper input. Enter also 'dimensionality repetitions' on same line." << std::endl;
-		exit(1);
-	}
-	else{
-		dims = atoi(argv[1]);
-		reps = atoi(argv[2]);
-		seed = std::chrono::system_clock::now().time_since_epoch().count();
-	}
+  int reps, dims,observables,lines,runs;
+  int i,j,k;
+  std::string *infilename, outfilename;
+	
+  if(argc<4+observables){
+    std::cout << "Improper input. Enter also 'lines runs ifn* ofn' on same line." << std::endl;
+    exit(1);
+  }
+  else{
+    observables=6;
+    infilename = new std::string[observables];
+    lines=atoi(argv[1]);
+    runs=atoi(argv[2]);
+    for(i=0;i<observables;i++){
+      infilename[i] = argv[3+i];
+    }
+    outfilename = argv[3+observables];
+  }
+  for(i=0;i<observables;i++){
+    printf("%s",infilename[i].c_str());
+  }
 
   //initialize required vectors and matrices
-	std::default_random_engine generator (seed);
-	std::normal_distribution<double> dist(0.0,0.5);
-	arma::mat	val_matrix = arma::zeros<arma::mat>(reps,dims),
-			tval_matrix = val_matrix,
-
-			cov_matrix = arma::zeros<arma::mat>(dims,dims),
-			eigvec_matrix = cov_matrix;
-
-	arma::vec	mean_vec = arma::zeros<arma::mat>(dims);
-
+  arma::mat *val_matrix,*tval_matrix,*cov_matrix,*eigvec_matrix;
+  arma::vec *mean_vec;
+  /*
+  for(i=0;i<observables;i++){
+    val_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    tval_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    cov_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+    eigvec_matrix = new arma::zeros<arma::mat>(lines,runs)[observables];
+  }
+ 
   //initialize matrices and arrays
-	for(i=0;i<reps;i++){
-		for(j=0;j<dims;j++){
-			random = dist(generator);
-			val_matrix(i,j) = (double) ((i+1)*(j+1))*0.1 + random;
-		}
-	}
-
+  for(i=0;i<observables){
+    ifile.open(infilename[i]);
+    for(j=0;j<lines;j++){
+      for(k=0;k<runs;k++){
+	ifile >> val_matrix[i](i,j);
+      }
+    }
+    ifile.close();
+    val_matrix[i].print();
+  }
 
   //calculate the PCA Transformed matrix
-	tval_matrix = calculate_tmatrix_function(val_matrix, eigvec_matrix, mean_vec, cov_matrix);
-
-
-	val_matrix = calculate_ttovalmatrix_function(tval_matrix, eigvec_matrix, mean_vec, cov_matrix);
+  //  tval_matrix = calculate_tmatrix_function(val_matrix, eigvec_matrix, mean_vec, cov_matrix);
+  //  val_matrix = calculate_ttovalmatrix_function(tval_matrix, eigvec_matrix, mean_vec, cov_matrix);
 
   //write output to file
-	writeFile("val.dat",val_matrix);
-	writeFile("tval.dat",tval_matrix);
+  writeFile("val.dat",val_matrix);
+  writeFile("tval.dat",tval_matrix);
+  */
+  delete[] val_matrix, tval_matrix, cov_matrix, eigvec_matrix, mean_vec;
 
-	return 0;
+  return 0;
 
 }
