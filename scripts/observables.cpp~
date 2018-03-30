@@ -20,3 +20,9 @@ double median_Width(arma::mat function, double factor){
   return median_width;
 }
 
+int main(int argc, char* argv[]){
+  
+
+
+  return 0;
+}

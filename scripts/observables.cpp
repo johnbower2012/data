@@ -21,4 +21,27 @@ double median_Width(arma::mat function, double factor){
 }
 
 int main(int argc, char* argv[]){
+
+  std::string *infilename,outfilename;
+  int observables=7,lines,runs;
+  infilename = new std::string[observables];
+
+  if(argc<5+observables){
+    std::cout << "Improper input. Enter also 'lines runs observables ifn*[7] ofn' on same line." << std::endl;
+    exit(1);
+  }
+  else{
+    infilename = new std::string[observables];
+    lines=atoi(argv[1]);
+    runs=atoi(argv[2]);
+    observables=atoi(argv[3]);
+    for(i=0;i<observables;i++){
+      infilename[i]=argv[4+i];
+    }
+    outfilename = argv[4+observables];
+  }
+
   
+  
+  return 0;
+}

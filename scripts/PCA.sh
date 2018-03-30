@@ -1,7 +1,7 @@
 #!/bin/bash
 
 outfilename="outfile.dat"
-path='../model_output/'
+path='../model_output_false/'
 runs=`ls -d ${path}run* | wc -l`
 find ${path}run0000/I* | cut -d '/' -f 4 > names.dat
 printf "allcharges.dat\n" >> names.dat
