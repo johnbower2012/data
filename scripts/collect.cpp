@@ -28,7 +28,9 @@ int main(int argc, char* argv[]){
   std::string linefromfile;
   while(!ifile.eof()){
     std::getline(ifile,linefromfile);
-    lines++;
+    if(linefromfile!=""){
+      lines++;
+    }
   }
   ifile.close();
 
