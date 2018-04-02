@@ -2,6 +2,7 @@
 #include<fstream>
 #include<cmath>
 #include "armadillo"
+#include "pricomana.cpp"
 
 double median_Width(arma::mat function, double factor){
   int rows = function.n_rows;
@@ -24,7 +25,6 @@ double median_Width(arma::mat function, double factor){
 }
 
 int main(int argc, char* argv[]){
-
   std::string *infilename,*outfilename;
   int observables=7,lines,runs;
   int i,j,k;
@@ -47,30 +47,61 @@ int main(int argc, char* argv[]){
 
   std::ifstream ifile;
   std::ofstream ofile;
-  arma::mat *val_matrix;
-  arma::vec delY, *obs_vec;
+  arma::mat *val_matrix, *obs_matrix;
+  arma::vec delY_vec;
   val_matrix = new arma::mat[observables];
-  obs_vec = new arma::vec[observables];
-  delY = arma::zeros<arma::vec>(lines);
+  obs_matrix = new arma::mat[observables];
+  delY_vec = arma::zeros<arma::vec>(lines);
   for(i=0;i<observables;i++){
     val_matrix[i] = arma::zeros<arma::mat>(runs,lines);
-    obs_vec[i] = arma::zeros<arma::vec>(2);
+    obs_matrix[i] = arma::zeros<arma::mat>(runs,2);
     ifile.open(infilename[i]);
     printf("+++++ %s +++++\n", infilename[i].c_str());
     for(j=0;j<lines;j++){
       for(k=0;k<runs;k++){
 	if(k==0){
-	  ifile >> delY(j);
+	  ifile >> delY_vec(j);
 	} else{
 	  ifile >> val_matrix[i](k-1,j);
 	}
       }
     }
-    printf("pass\n");
-    val_matrix[i].print();
     ifile.close();
   }
 
+  arma::mat function = arma::zeros<arma::mat>(runs,2);
+  for(i=0;i<observables;i++){
+    for(j=0;j<runs;j++){
+      for(k=0;k<lines;k++){
+	function(k,0) = delY_vec(k);
+	function(k,1) = val_matrix[i](j,k);
+      }
+      obs_matrix[i](j,0) = median_Width(function,0.5);
+      obs_matrix[i](j,1) =  median_Width(function,2.0/3.0) - median_Width(function,1.0/3.0);
+    }
+  }
+
+  arma::mat *tval_matrix,*cov_matrix,*eigvec_matrix;
+  arma::vec *eigval_vec,*mean_vec;
+  arma::mat print_matrix = arma::zeros<arma::mat>(2,2);
+  tval_matrix = new arma::mat[observables];
+  cov_matrix = new arma::mat[observables];
+  eigvec_matrix = new arma::mat[observables];
+  eigval_vec = new arma::vec[observables];
+  mean_vec = new arma::vec[observables];
+  for(i=0;i<observables;i++){
+    tval_matrix[i] = arma::zeros<arma::mat>(2,2);
+    cov_matrix[i] = arma::zeros<arma::mat>(2,2);
+    eigvec_matrix[i] = arma::zeros<arma::mat>(2,2);
+    eigval_vec[i] = arma::zeros<arma::vec>(2);
+    mean_vec[i] = arma::zeros<arma::vec>(2);
+  }
+  for(i=0;i<observables;i++){
+    printf("+++++ %s +++++\n",infilename[i].c_str());
+    tval_matrix[i] = calculate_tmatrix_function(val_matrix[i], eigval_vec[i], eigvec_matrix[i], mean_vec[i], cov_matrix[i]);
+    eigval_vec[i].print();
+  }
+  
   
   /*
     for(i=0;i<observables;i++){
@@ -98,9 +129,14 @@ int main(int argc, char* argv[]){
     */
 
   delete[] val_matrix;
-  delete[] obs_vec;
+  delete[] obs_matrix;
   delete[] infilename;
   delete[] outfilename;
+  delete[] tval_matrix;
+  delete[] eigval_vec;
+  delete[] eigvec_matrix;
+  delete[] mean_vec;
+  delete[] cov_matrix;
   
   return 0;
 }
