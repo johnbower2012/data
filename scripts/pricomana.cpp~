@@ -171,7 +171,7 @@ arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec& eigval_vec
 	arma::eig_sym(eigval_vec, eigvec_matrix, zcov_matrix);
 
 	//sort eigenvalues in descending order
-	//	eigvec_matrix = sort_eigenvectors_function(eigval_vec, eigvec_matrix);
+	eigvec_matrix = sort_eigenvectors_function(eigval_vec, eigvec_matrix);
 
 	//calculate rotated system
 	tval_matrix = zval_matrix*eigvec_matrix;
