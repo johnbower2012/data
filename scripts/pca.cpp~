@@ -64,8 +64,9 @@ int main(int argc, char* argv[]){
     outfilename = argv[4+observables];
   }
   //TEST LESS RUNS AND LINES
-  lines=41;
-  //  runs=999;
+  lines=21;
+  //runs=999;
+  observables=1;
 
   //initialize required vectors and matrices
   arma::mat *val_matrix,*tval_matrix,*cov_matrix,*eigvec_matrix;

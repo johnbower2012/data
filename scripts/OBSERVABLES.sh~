@@ -1,9 +1,8 @@
 #!/bin/bash
 
 EXEC_FILE='observables.x'
-
 PARAM_FILE='script_parameters.dat'
-NAMES_FILE='script_names.dat'
+NAMES_FILE='script_model_names.dat'
 
 FOLDER=''
 LINES=0
@@ -34,8 +33,10 @@ while read name; do
    i=$(($i + 1))
    dest="$FOLDER$name"
    array[$i]="$dest"
-done < <(cat $NAMES_FILE)
+done < <(egrep -v '^(#|$)' $NAMES_FILE)
 
+echo "Running:"
 echo $EXEC_FILE $LINES $RUNS $FILES ${array[1]} ${array[2]} ${array[3]} ${array[4]} ${array[5]} ${array[6]} ${array[7]}
+echo ""
 
 ./$EXEC_FILE $LINES $RUNS $FILES ${array[1]} ${array[2]} ${array[3]} ${array[4]} ${array[5]} ${array[6]} ${array[7]}

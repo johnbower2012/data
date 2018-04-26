@@ -1,7 +1,7 @@
 /*
  *
  *
-	This file uses "pca.cpp" and "armadillo" to conduct Principle Component Analysis. PCA is
+	This file uses "pricomana.cpp" and "armadillo" to conduct Principle Component Analysis. PCA is
 	a rotation whereby the new axes are in the directions of greatest variance for the data,
 	ordered {t_i} such that t_1 is in the direction of greatest variance, t_2 the next, and
 	so forth.
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
   std::ofstream ofile;
   std::ifstream ifile;
 
-  observables=7;
+  observables=4;
   
   if(argc<5+observables){
     std::cout << "Improper input. Enter also 'lines runs observables ifn*[7] ofn' on same line."  << std::endl;
@@ -64,8 +64,9 @@ int main(int argc, char* argv[]){
     outfilename = argv[4+observables];
   }
   //TEST LESS RUNS AND LINES
-  lines=41;
-  //  runs=999;
+  //lines=18;
+  //runs=999;
+  // observables=1;
 
   //initialize required vectors and matrices
   arma::mat *val_matrix,*tval_matrix,*cov_matrix,*eigvec_matrix;

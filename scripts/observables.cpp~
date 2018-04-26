@@ -15,136 +15,94 @@ double zeroth_moment(const arma::mat &function);
 double first_moment(const arma::mat &function);
 double second_moment(const arma::mat &function);
 
+void obs_matrix_median_widths(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
+void obs_matrix_moments(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
+
 void load_file(int files, int lines, int runs, std::string *&infilename, arma::vec &delY_vec, arma::mat *&val_matrix);
+void print_file(std::string outfilename, arma::mat matrix);
 
 int main(int argc, char* argv[]){
   std::string *infilename,*outfilename;
-  int observables=7,lines,runs;
+  int observables,obs_file,files,lines,runs;
   int i,j,k;
   infilename = new std::string[observables];
   outfilename = new std::string[observables];
 
-  if(argc<4+observables){
-    std::cout << "Improper input. Enter also 'lines runs observables ifn*[7] ofn' on same line." << std::endl;
+  files=4;
+  obs_file=3;
+  observables=files*obs_file;
+
+  if(argc<4+files){
+    std::cout << "Improper input. Enter also 'lines runs observables ifn*[7]' on same line." << std::endl;
     exit(1);
   }
   else{
     infilename = new std::string[observables];
     lines=atoi(argv[1]);
     runs=atoi(argv[2]);
-    observables=atoi(argv[3]);
-    for(i=0;i<observables;i++){
+    files=atoi(argv[3]);
+    for(i=0;i<files;i++){
       infilename[i]=argv[4+i];
     }
   }
 
-  std::ifstream ifile;
-  std::ofstream ofile;
-  arma::mat *val_matrix, *obs_matrix;
+  /*********
+	     LOAD FILE
+	     CALCULATE OBS_MAT
+  *********/
+  arma::mat *val_matrix, obs_matrix;
   arma::vec delY_vec;
-  val_matrix = new arma::mat[observables];
-  obs_matrix = new arma::mat[observables];
+  val_matrix = new arma::mat[files];
+  obs_matrix = arma::zeros<arma::mat>(runs,observables);
   delY_vec = arma::zeros<arma::vec>(lines);
-  load_file(observables, lines, runs, infilename, delY_vec, val_matrix);
-
-  for(i=0;i<observables;i++){
-    for(j=0;j<5;j++){
-      for(k=0;k<10;k++){
-	printf("%f ",val_matrix[i](j,k));
-      }
-      printf("\n");
-    }
-    printf("\n");
-  }
-  printf("Pass\n");
-  delY_vec.print();
+  load_file(files, lines, runs, infilename, delY_vec, val_matrix);
+  //obs_matrix_median_widths(files,obs_file,val_matrix,delY_vec,obs_matrix);
+  obs_matrix_moments(files,obs_file,val_matrix,delY_vec,obs_matrix);
+  obs_matrix.print();
+  
+  /*********
+	     CONDUCT PCA
+	     PRINT
+  *********/
+  std::string printname = "moments_experimental_data.dat";
   /*
-    for(i=0;i<observables;i++){
-    val_matrix[i] = arma::zeros<arma::mat>(runs,lines);
-    obs_matrix[i] = arma::zeros<arma::mat>(runs,2);
-    ifile.open(infilename[i]);
-    printf("+++++ %s LOADED +++++\n", infilename[i].c_str());
-    for(j=0;j<lines;j++){
-      for(k=0;k<runs;k++){
-	if(k==0){
-	  ifile >> delY_vec(j);
-	} else{
-	  ifile >> val_matrix[i](k-1,j);
-	}
-      }
-    }
-    ifile.close();
-  }
-  */
-  
-  arma::mat function = arma::zeros<arma::mat>(runs,2);
-  for(i=0;i<observables;i++){
-    for(j=0;j<runs;j++){
-      for(k=0;k<lines;k++){
-	function(k,0) = delY_vec(k);
-	function(k,1) = val_matrix[i](j,k);
-      }
-      obs_matrix[i](j,0) = median_width_fabs_function(function,0.5);
-      obs_matrix[i](j,1) =  median_width_fabs_function(function,2.0/3.0) - median_width_fabs_function(function,1.0/3.0);
-    }
-  }
+  arma::mat tval_matrix,cov_matrix,eigvec_matrix,print_matrix;
+  arma::vec eigval_vec,mean_vec;
+  print_matrix = arma::zeros<arma::mat>(observables,observables+1);
+  tval_matrix = arma::zeros<arma::mat>(observables,observables);
+  cov_matrix = arma::zeros<arma::mat>(observables,observables);
+  eigvec_matrix = arma::zeros<arma::mat>(observables,observables);
+  eigval_vec = arma::zeros<arma::vec>(observables);
+  mean_vec = arma::zeros<arma::vec>(observables);
 
-  arma::mat *tval_matrix,*cov_matrix,*eigvec_matrix;
-  arma::vec *eigval_vec,*mean_vec;
-  arma::mat print_matrix = arma::zeros<arma::mat>(2,2);
-  tval_matrix = new arma::mat[observables];
-  cov_matrix = new arma::mat[observables];
-  eigvec_matrix = new arma::mat[observables];
-  eigval_vec = new arma::vec[observables];
-  mean_vec = new arma::vec[observables];
-  for(i=0;i<observables;i++){
-    tval_matrix[i] = arma::zeros<arma::mat>(2,2);
-    cov_matrix[i] = arma::zeros<arma::mat>(2,2);
-    eigvec_matrix[i] = arma::zeros<arma::mat>(2,2);
-    eigval_vec[i] = arma::zeros<arma::vec>(2);
-    mean_vec[i] = arma::zeros<arma::vec>(2);
-  }
-  for(i=0;i<observables;i++){
-    printf("+++++ %s eigvalues +++++\n",infilename[i].c_str());
-    tval_matrix[i] = calculate_tmatrix_function(obs_matrix[i], eigval_vec[i], eigvec_matrix[i], mean_vec[i], cov_matrix[i]);
-    eigval_vec[i].print();
-  }
-  
-  
-  /*
-    for(i=0;i<observables;i++){
-    delimiter="/";
-    position=infilename[i].rfind(delimiter);
-    if(position!=std::string::npos){
-      infilename[i].erase(infilename[i].begin(),infilename[i].begin()+position+delimiter.length());
-    }
-    for(j=0;j<lines;j++){
-      for(k=0;k<lines;k++){
-	print_matrix(j,k+1) = eigvec_matrix[i](j,k);
-      }
-      print_matrix(j,0) = delY(j);
-    }					    
-    writeFile(infilename[i].c_str(),print_matrix);
+  tval_matrix = calculate_tmatrix_function(obs_matrix, eigval_vec, eigvec_matrix, mean_vec, cov_matrix);
 
-    delimiter = ".";
-    position=infilename[i].rfind(delimiter);
-    if(position!=std::string::npos){
-      infilename[i].erase(infilename[i].begin()+position,infilename[i].end());
+  printf("+++++ eigvalues +++++\n");
+  eigval_vec.print();
+  printf("+++++ eigvectors +++++\n");
+  eigvec_matrix.print();
+  for(i=0;i<observables;i++){
+    print_matrix(i,0) = eigval_vec(i);
+    for(j=0;j<observables;j++){
+      print_matrix(i,j+1) = eigvec_matrix(i,j);
     }
-    infilename[i] += "_lambda.dat";
-    writeFile(infilename[i].c_str(),eigval_vec[i]);
   }
-    */
+  arma::vec sum = arma::zeros<arma::vec>(observables);
+  for(i=0;i<observables;i++){
+    sum(i) = eigval_vec(i);
+    sum(i) += sum(abs(i-1));
+  }
+  for(i=0;i<observables;i++){
+    sum(i) /= sum(observables-1);
+    printf("%f\n",sum(i));
+  }
+*/
+  //print_file(printname,print_matrix);
+  print_file(printname,obs_matrix);
 
   delete[] val_matrix;
-  delete[] obs_matrix;
   delete[] infilename;
   delete[] outfilename;
-  delete[] tval_matrix;
-  delete[] eigval_vec;
-  delete[] eigvec_matrix;
-  delete[] mean_vec;
-  delete[] cov_matrix;
   
   return 0;
 }
@@ -322,7 +280,7 @@ double first_moment(const arma::mat &function){
     zero += f*dx;
   }
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     first += f*x*dx;
@@ -340,14 +298,14 @@ double second_moment(const arma::mat &function){
     zero += f*dx;
   }
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     first += f*x*dx;
   }
   first /= zero;
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     second += (x - first)*(x - first)*f*dx;
@@ -362,7 +320,7 @@ void load_file(int files, int lines, int runs, std::string *&infilename, arma::v
     delete[] val_matrix;
   }
   val_matrix = new arma::mat[files];
-  int i, j, k;p
+  int i, j, k;
 
   for(i=0;i<files;i++){
     val_matrix[i] = arma::zeros<arma::mat>(runs,lines);
@@ -379,4 +337,53 @@ void load_file(int files, int lines, int runs, std::string *&infilename, arma::v
     }
     ifile.close();
   }
+}
+void print_file(std::string outfilename, arma::mat matrix){
+  int rows = matrix.n_rows;
+  int cols = matrix.n_cols;
+  std::ofstream ofile;
+  ofile.open(outfilename);
+  for(int i=0;i<rows;i++){
+    for(int j=0;j<cols;j++){
+      ofile << ' ' << matrix(i,j);
+    }
+    ofile << '\n';
+  }
+  ofile.close();
+}
+
+void obs_matrix_median_widths(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix){
+  int i,j,k;
+  int runs = val_matrix[0].n_rows;
+  int lines = delY_vec.n_elem;
+  arma::mat function = arma::zeros<arma::mat>(lines,2);
+  obs_matrix = arma::zeros<arma::mat>(runs,obs_file*files);
+  for(i=0;i<files;i++){
+    for(j=0;j<runs;j++){
+      for(k=0;k<lines;k++){
+	function(k,0) = delY_vec(k);
+	function(k,1) = val_matrix[i](j,k);
+      }
+      obs_matrix(j,i*obs_file) = median_width_fabs_function(function,0.5);
+      obs_matrix(j,i*obs_file+1) =  median_width_fabs_function(function,2.0/3.0) - median_width_fabs_function(function,1.0/3.0);
+    }
+  }
+}
+void obs_matrix_moments(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix){
+  int i,j,k;
+  int runs = val_matrix[0].n_rows;
+  int lines = delY_vec.n_elem;
+  arma::mat function = arma::zeros<arma::mat>(lines,2);
+  obs_matrix = arma::zeros<arma::mat>(runs,obs_file*files);
+  for(i=0;i<files;i++){
+    for(j=0;j<runs;j++){
+      for(k=0;k<lines;k++){
+	function(k,0) = delY_vec(k);
+	function(k,1) = val_matrix[i](j,k);
+      }
+      obs_matrix(j,i*obs_file) = zeroth_moment(function);
+      obs_matrix(j,i*obs_file+1) = first_moment(function);
+      obs_matrix(j,i*obs_file+2) = second_moment(function);
+    }
+  }  
 }

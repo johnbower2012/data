@@ -1,4 +1,5 @@
-FOLDER ~/programs/devel/data_false/
+#FOLDER data/exp_data/
+FOLDER ../model_output/
 RUNS 1000
-LINES 120
-FILES 7
+LINES 16
+FILES 4
