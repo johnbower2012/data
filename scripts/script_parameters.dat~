@@ -1,0 +1,4 @@
+PATH ~/programs/devel/data_false/
+RUNS 1000
+LINES 120
+FILES 7

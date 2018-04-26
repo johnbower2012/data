@@ -1,20 +1,43 @@
 #!/bin/bash
 
-path='../model_output_false/'
-runs=`ls -d ${path}run* | wc -l`
-find ${path}run0000/I* | cut -d '/' -f 4 > names.dat
-printf "allcharges.dat\n" >> names.dat
-names=`wc -l < names.dat`
+EXEC_FILE='observables.x'
+
+PARAM_FILE='script_parameters.dat'
+NAMES_FILE='script_names.dat'
+
+FOLDER=''
+LINES=0
+RUNS=0
+FILES=0
+
+while read NAME VALUE; do
+   if [ ${NAME} == 'FOLDER' ]
+   then
+	FOLDER=${VALUE}
+   elif [ ${NAME} == 'LINES' ]
+   then
+       LINES=${VALUE}
+   elif [ ${NAME} == 'RUNS' ]
+   then 
+       RUNS=${VALUE}
+   elif [ ${NAME} == 'FILES' ]
+   then
+       FILES=${VALUE}
+   else
+       echo "Variable unknown: $NAME $VALUE"
+   fi
+done < <(egrep -v '^(#|$)' $PARAM_FILE)
+
 declare -a array
-for((i=1;i<$names+1;i++))
-do
-    name=` cut -d $'\n' -f $i names.dat `
-    dest="$path$name"
-    array[$i]="$dest"
-done
+i=0
+while read name; do
+   i=$(($i + 1))
+   dest="$FOLDER$name"
+   array[$i]="$dest"
+done < <(cat $NAMES_FILE)
 
-lines=` wc -l < $dest `
+echo "Running:"
+echo $EXEC_FILE $LINES $RUNS $FILES ${array[1]} ${array[2]} ${array[3]} ${array[4]} ${array[5]} ${array[6]} ${array[7]}
+echo ""
 
-./observables.x $lines $runs $names ${array[1]} ${array[2]} ${array[3]} ${array[4]} ${array[5]} ${array[6]} ${array[7]}
-
-rm names.dat
+./$EXEC_FILE $LINES $RUNS $FILES ${array[1]} ${array[2]} ${array[3]} ${array[4]} ${array[5]} ${array[6]} ${array[7]}

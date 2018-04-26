@@ -1,0 +1,15 @@
+#This file will run all necessary programs in a continuous fashion.
+
+#Parameters.sh will collect the necessary parameters files and create the run directories
+./Parameters.sh
+
+#Run.sh runs the program
+cd ..
+./Run.sh 0 1000
+cd scripts/
+
+#Collect.sh arranges the data into a usable format
+./Collect.sh
+
+#PCA.sh performs the analysis
+./PCA.sh
