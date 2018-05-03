@@ -17,7 +17,6 @@
 **********************************************/
 arma::mat kernal_sqare_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
 arma::mat kernal_sqare_exp_noise_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
 arma::mat kernal_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
 arma::mat kernal_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
 arma::mat kernal_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);

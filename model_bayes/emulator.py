@@ -29,13 +29,12 @@ pl.ylabel('y')
 """
 #2D plot
 
-pl.plot(train_data[:,0],train_data[:,1],'b-',label='training points')
-
+pl.plot(train_data[:,0],train_data[:,1],'bo',label='training points')
 pl.plot(test_data[:,0],test_data[:,1],'r--',label='mean of distribution')
 pl.gca().fill_between(test_data[:,0].flat,test_data[:,2],test_data[:,3],color="#dddddd", label='2 sigma')
-pl.plot(test_data[:,0],test_data[:,4],'co') 
-pl.plot(test_data[:,0],test_data[:,5],'mo') 
-pl.plot(test_data[:,0],test_data[:,6],'yo')
+pl.plot(test_data[:,0],test_data[:,4],'c-') 
+pl.plot(test_data[:,0],test_data[:,5],'m-') 
+pl.plot(test_data[:,0],test_data[:,6],'y-')
 
 pl.xlabel('delY')
 pl.ylabel('BF')

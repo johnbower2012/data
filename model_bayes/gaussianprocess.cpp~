@@ -112,7 +112,7 @@ arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_ve
 	arma::mat kernal_matrix = arma::zeros<arma::mat> (ai, bi);
 
 	theta1 = hyperp_vec(0)*hyperp_vec(0);
-	theta2 = 2.0/hyperp_vec(1)/hyperp_vec(1);
+	theta2 = 2.0/hyperp_vec(2)/hyperp_vec(1);
 
 	for(i=0;i<ai;i++){
 		for(j=0;j<bi;j++){
@@ -354,7 +354,7 @@ arma::mat gaussian_process_solver_basic(arma::mat kernal_func(arma::mat, arma::m
 				output_mat = arma::zeros<arma::mat>(test, param + 2*observables + samples);
 
 	arma::vec	param_x_vec = arma::zeros<arma::vec> (param);
-
+	printf("pass\n");
 	//calculate kernal matrices
 	kernal_mat = kernal_func(X_mat, X_mat, hyperp_vec);
 	kernal_s_mat = kernal_func(X_mat, X_s_mat, hyperp_vec);

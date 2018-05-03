@@ -71,8 +71,9 @@ int main(int argc, char* argv[]){
 	/*SYSTEM and OUTPUT--
 	***********************************************************/
 
-	train = 26;
-	test = 75;
+	//train = 26;
+	train = 20;
+	test = 100;
 
 	samples = 3;
 	param = 1;
@@ -86,10 +87,11 @@ int main(int argc, char* argv[]){
 	***********************************************************/
 
 	hyperp = 3;
-	sigma_n = 0.001;
-	sigma_f = 0.005;
+	sigma_n = 0.0001;
+	sigma_f = 0.003;
 	l = 0.25;
-		
+
+	
 
 	//random number generator
 	std::default_random_engine generator(seed);
@@ -113,6 +115,14 @@ int main(int argc, char* argv[]){
 	hyperp_vec(1) = l;
 	hyperp_vec(2) = sigma_n;
 
+	double theta1=0.7;
+	double theta2=1.5;
+     	double theta3=10;
+
+	hyperp_vec(0) = theta1;
+	hyperp_vec(1) = theta2;
+	hyperp_vec(2) = theta3;
+	/*
 	//Generate Functions	
 	ifile.open(infilename);
 	for(i=0;i<train;i++){
@@ -122,20 +132,28 @@ int main(int argc, char* argv[]){
 	  xvec_train_mat(i,0) = dely_vec(i);
 	  yvec_train_mat(i,0) = BF_vec(i);
 	}
-	ifile.close();
-	x_init = dely_vec(0);
-	x_final = dely_vec(train-1);
+	*/
+	x_init = 0;
+	x_final = 10;;
+	dx = (x_final - x_init)/(double) train;
+	for(i=0;i<train;i++){
+	  xvec_train_mat(i,0) = x_init + i*dx;
+	  yvec_train_mat(i,0) = sin(xvec_train_mat(i,0));
+	}
+	//	x_init = dely_vec(0);
+	//	x_final = dely_vec(train-1);
+	x_init = -5;
+	x_final = 15;
 	dx = (x_final - x_init)/(double) test;
 	for(i=0;i<test;i++){
 	  xvec_test_mat(i,0) = x_init + ((double) i)*dx;
 	}
 
 	//Execute posterior function generation
-	output_mat = gaussian_process_solver_basic(kernal_square_exp_noise_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
-
+	//	output_mat = gaussian_process_solver_basic(kernal_square_exp_noise_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
+	output_mat = gaussian_process_solver_basic(kernal_square_exp_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
 	//Write the output file
 	write_output(output_mat, test, param, observables, samples, outfilename);
-
 	//Write the trainingset to file
 	write_trainset(xvec_train_mat, yvec_train_mat, "trainset.dat");
 
