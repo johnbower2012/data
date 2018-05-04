@@ -15,13 +15,13 @@
 
 /**KERNAL FUCNTIONS
 **********************************************/
-arma::mat kernal_sqare_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_sqare_exp_noise_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
-arma::mat kernal_derivative_function(arma::mat kernal_func(arma::mat, arma::mat, arma::vec), arma::mat A, arma::mat B, arma::vec hyperp_vec, int selection, double precision);
+arma::mat kernel_sqare_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_sqare_exp_noise_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec);
+arma::mat kernel_derivative_function(arma::mat kernal_func(arma::mat, arma::mat, arma::vec), arma::mat A, arma::mat B, arma::vec hyperp_vec, int selection, double precision);
 
 /**GAUSSIAN PROCESS FUNCTIONS
 **********************************************/
@@ -30,6 +30,8 @@ arma::mat gaussian_process_solver_regression(
 	int samples, arma::vec hyperp_vec, double epsilon, 
 	arma::mat regression_func(arma::mat, arma::vec), int power);
 arma::mat gaussian_process_solver_basic(arma::mat X_mat, arma::mat Y_mat, arma::mat X_s_mat, int samples, arma::vec hyperp_vec, double epsilon);
+void gaussian_process(const arma::mat &x_mat, const arma::vec &y_vec, arma::mat kernel_function(arma::mat,arma::mat,arma::vec), arma::vec hyperp_param, double sigma_n, const arma::mat &x_star_mat,
+		      arma::vec &mean, arma::mat &variance, double &log_likelihood);
 
 /**REGRESSION FUNCTIONS
 **********************************************/

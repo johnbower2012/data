@@ -29,15 +29,15 @@ pl.ylabel('y')
 """
 #2D plot
 
-pl.plot(train_data[:,0],train_data[:,1],'bo',label='training points')
-pl.plot(test_data[:,0],test_data[:,1],'r--',label='mean of distribution')
-pl.gca().fill_between(test_data[:,0].flat,test_data[:,2],test_data[:,3],color="#dddddd", label='2 sigma')
-pl.plot(test_data[:,0],test_data[:,4],'c-') 
-pl.plot(test_data[:,0],test_data[:,5],'m-') 
-pl.plot(test_data[:,0],test_data[:,6],'y-')
 
-pl.xlabel('delY')
-pl.ylabel('BF')
+pl.plot(train_data[:,0],train_data[:,4],'bo',label='training points')
+pl.plot(test_data[:,0],test_data[:,4],'r--',label='mean of distribution')
+pl.gca().fill_between(test_data[:,0].flat,test_data[:,5],test_data[:,6],color="#dddddd", label='2 sigma')
+pl.plot(test_data[:,0],test_data[:,7],'c-') 
+
+
+pl.xlabel('x')
+pl.ylabel('y')
 pl.grid(True)
 pl.legend(loc='upper right')
 pl.title('star_KK Balance Function')

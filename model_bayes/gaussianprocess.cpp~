@@ -6,7 +6,7 @@
 
 //calculate the kernal of vector sets A and B, using hyperparameters in hyperp, given each has dimensionality param,
 //where A and B are the form C = [X1,X2,...] where each Xi.t = [param_i_1, param_i_2, ...].
-arma::mat kernal_square_exp_noise_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_square_exp_noise_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff,
 			theta1, theta2, theta3;
 	int i, j, k,
@@ -54,7 +54,7 @@ arma::mat kernal_square_exp_noise_function(arma::mat A, arma::mat B, arma::vec h
 
 	return kernal_matrix;
 }
-arma::mat kernal_derivative_function(arma::mat kernal_func(arma::mat, arma::mat, arma::vec), arma::mat A, arma::mat B, arma::vec hyperp_vec, int selection, double precision){
+arma::mat kernel_derivative_function(arma::mat kernal_func(arma::mat, arma::mat, arma::vec), arma::mat A, arma::mat B, arma::vec hyperp_vec, int selection, double precision){
 	int a = A.n_rows,
 		b = B.n_cols;
 
@@ -74,7 +74,7 @@ arma::mat kernal_derivative_function(arma::mat kernal_func(arma::mat, arma::mat,
 
 	return (kernal_plus - kernal_minus)/(2.0*precision);
 }
-arma::mat kernal_square_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_square_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff,
 			theta1, theta2;
 	int i, j, k,
@@ -101,7 +101,7 @@ arma::mat kernal_square_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_
 
 	return kernal_matrix;
 }
-arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff,
 			theta1, theta2, theta3,
 			pi = acos(-1.0), sine;
@@ -112,7 +112,7 @@ arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_ve
 	arma::mat kernal_matrix = arma::zeros<arma::mat> (ai, bi);
 
 	theta1 = hyperp_vec(0)*hyperp_vec(0);
-	theta2 = 2.0/hyperp_vec(2)/hyperp_vec(1);
+	theta2 = 2.0/hyperp_vec(1)/hyperp_vec(1);
 
 	for(i=0;i<ai;i++){
 		for(j=0;j<bi;j++){
@@ -130,7 +130,7 @@ arma::mat kernal_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_ve
 
 	return kernal_matrix;
 }
-arma::mat kernal_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff,
 			theta1, theta2, theta3,
 			pi = acos(-1.0), sine;
@@ -160,7 +160,7 @@ arma::mat kernal_periodic_decayaway_function(arma::mat A, arma::mat B, arma::vec
 
 	return kernal_matrix;
 }
-arma::mat kernal_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff, quant,
 			theta1, theta2, theta3;
 	int i, j, k,
@@ -189,10 +189,10 @@ arma::mat kernal_rational_quadratic_function(arma::mat A, arma::mat B, arma::vec
 
 	return kernal_matrix;
 }
-arma::mat kernal_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+arma::mat kernel_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	int ai = A.n_rows, bi = B.n_rows;
 
-	arma::mat kernal_matrix = arma::zeros<arma::mat> (ai, bi);
+	arma::mat kernel_matrix = arma::zeros<arma::mat> (ai, bi);
 
 	arma::vec 	hyperp_1 = arma::zeros<arma::vec>(2),
 				hyperp_2 = arma::zeros<arma::vec>(3),
@@ -214,12 +214,12 @@ arma::mat kernal_co2_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	hyperp_4(1) = hyperp_vec(9);
 	hyperp_4(2) = hyperp_vec(10);
 
-	kernal_matrix = kernal_square_exp_function(A,B,hyperp_1);
-	kernal_matrix += kernal_periodic_decayaway_function(A,B,hyperp_2);
-	kernal_matrix += kernal_rational_quadratic_function(A,B,hyperp_3);
-	kernal_matrix += kernal_square_exp_noise_function(A,B,hyperp_4);
+	kernel_matrix = kernel_square_exp_function(A,B,hyperp_1);
+	kernel_matrix += kernel_periodic_decayaway_function(A,B,hyperp_2);
+	kernel_matrix += kernel_rational_quadratic_function(A,B,hyperp_3);
+	kernel_matrix += kernel_square_exp_noise_function(A,B,hyperp_4);
 
-	return kernal_matrix;
+	return kernel_matrix;
 }
 
 
@@ -354,7 +354,7 @@ arma::mat gaussian_process_solver_basic(arma::mat kernal_func(arma::mat, arma::m
 				output_mat = arma::zeros<arma::mat>(test, param + 2*observables + samples);
 
 	arma::vec	param_x_vec = arma::zeros<arma::vec> (param);
-	printf("pass\n");
+
 	//calculate kernal matrices
 	kernal_mat = kernal_func(X_mat, X_mat, hyperp_vec);
 	kernal_s_mat = kernal_func(X_mat, X_s_mat, hyperp_vec);
@@ -399,8 +399,26 @@ arma::mat gaussian_process_solver_basic(arma::mat kernal_func(arma::mat, arma::m
 
 	return output_mat;
 }
+void gaussian_process(const arma::mat &x_mat, const arma::vec &y_vec, arma::mat kernel_function(arma::mat,arma::mat,arma::vec), arma::vec hyperp_param, double sigma_n, const arma::mat &x_star_mat,
+		      arma::vec &mean, arma::mat &variance, double &log_likelihood){
 
+  int param = x_mat.n_rows;
+  int train = x_mat.n_cols;
+  int test = x_star_mat.n_cols; 
+  arma::mat kernel = kernel_function(x_mat, x_mat, hyperp_param);
+  arma::mat kernel_star = kernel_function(x_mat,x_star_mat, hyperp_param);
+  arma::mat kernel_starstar = kernel_function(x_star_mat,x_star_mat, hyperp_param);
+  arma::mat I = arma::eye<arma::mat>(train,train);
 
+  arma::mat L = arma::chol(kernel+sigma_n*sigma_n*I);
+  arma::vec alpha = arma::solve(L.t(),arma::solve(L,y_vec));
+  mean = kernel_star.t()*alpha;
+  arma::mat var = arma::solve(L,kernel_star);
+  variance = kernel_starstar - var.t()*var;
+  
+  arma::mat temp = y_vec.t()*alpha;
+  log_likelihood = -0.5*temp(0,0) - arma::trace(L) - 0.5*train*log(2.0*acos(-1));
+}
 /**REGRESSION FUNCTIONS
 **********************************************/
 arma::mat regression_polynomial_function(arma::mat X_mat, arma::vec parameters){
@@ -470,8 +488,9 @@ void write_trainset(arma::mat X_mat, arma::mat Y_mat, std::string outfilename){
 			ofile << std::setw(15) << X_mat(i,j);
 		}
 		for(j=0;j<observables;j++){
-			ofile << std::setw(15) << Y_mat(i,j) << std::endl;
+		  ofile << std::setw(15) << Y_mat(i,j);
 		}
+		ofile << std::endl;
 	}
 	ofile.close();
 }
@@ -657,9 +676,9 @@ arma::vec log_likelihood_derivative(arma::mat Y_mat, arma::mat X_mat, int resolu
 			theta_f = hyperp_range_vec(1, selection),
 			dtheta = (theta_f - theta_i)/(double) (resolution - 1);
 
-	arma::mat 	kernal_mat = arma::zeros<arma::mat> (train,train),
-				kernal_inv_mat = kernal_mat,
-				kernal_derivative_mat = kernal_mat,
+	arma::mat 	kernel_mat = arma::zeros<arma::mat> (train,train),
+				kernel_inv_mat = kernal_mat,
+				kernel_derivative_mat = kernal_mat,
 				I = arma::eye<arma::mat>(train,train),
 				alpha = arma::zeros<arma::mat>(train,observables);
 
@@ -674,13 +693,13 @@ arma::vec log_likelihood_derivative(arma::mat Y_mat, arma::mat X_mat, int resolu
 		temp_plus(selection) += precision;
 		temp_minus(selection) -= precision;
 
-		kernal_mat = kernal_func(X_mat, X_mat, hyperp_temp_vec);
-		kernal_mat += I*1e-8;
-		kernal_inv_mat = kernal_mat.i();
+		kernel_mat = kernal_func(X_mat, X_mat, hyperp_temp_vec);
+		kernel_mat += I*1e-8;
+		kernel_inv_mat = kernal_mat.i();
 
 		alpha = kernal_inv_mat*Y_mat;
 
-		kernal_derivative_mat = kernal_derivative_function(kernal_func, X_mat, X_mat, hyperp_vec, selection, precision);
+		kernel_derivative_mat = kernel_derivative_function(kernal_func, X_mat, X_mat, hyperp_vec, selection, precision);
 
 		value = 0.5*arma::trace((alpha*alpha.t() - kernal_inv_mat)*kernal_derivative_mat);
 		log_likelihood_der_vec(i) = value;
@@ -690,3 +709,8 @@ arma::vec log_likelihood_derivative(arma::mat Y_mat, arma::mat X_mat, int resolu
 	
 	return log_likelihood_der_vec;
 }
+
+
+
+
+

@@ -21,143 +21,149 @@
 std::ofstream ofile;
 std::ifstream ifile;
 
-double function(arma::vec param){
-	double value = param(0) + param(0)*sin(1.5*param(0));
-	return value;
-}
-bool identical(arma::vec test){
-	int i, j, length = test.n_elem;
-	bool value = false;
-	for(i=0;i<length;i++){
-		for(j=i+1;j<length;j++){
-			if(test(i)==test(j)){
-				value = true;
-				break;
-			}
-		}
-	}
-	return value;
-}
-arma::vec hyperp_optimize_function(
-	arma::mat Y_mat, arma::mat X_mat, 
-	int resolution, double precision, 
-	arma::mat kernal_func(arma::mat, arma::mat, arma::vec), 
-	arma::vec hyperp_guess_vec, arma::mat& hyperp_range_mat);
-
 int main(int argc, char* argv[]){
 	//Variables for use throughout the program
-	int i,
-		train, test, 
-		param, observables, hyperp,
-		samples;
-	unsigned seed;
-	double 	x, epsilon;
-	double dx, x_init, x_final;
-	double sigma_n, sigma_f, l;
+  int i,j,
+    train, test, 
+    param, observables, hyperp,
+    samples;
+  unsigned seed;
+  double 	x, epsilon;
+  double dx, x_init, x_final;
+  double sigma_n, sigma_f, l;
 
-	//For writing to file
-	std::string infilename, outfilename;
+  sigma_n = 0.1;
+  sigma_f = 0.1;
+  l = 0.1;
 
-	//Test to ensure the proper input. Terminate program if command line inputs are not given
-	if(argc<3){
-		std::cout << "Improper entry. Please also enter 'infilename outfilename' on same line." << std::endl;
-		exit(1);
-	}
-	else{
-		infilename = argv[1];
-		outfilename = argv[2];
-	}
+  //For writing to file
+  std::string param_filename, obs_filename, outfilename, trainfilename;
 
-	/*SYSTEM and OUTPUT--
-	***********************************************************/
+  //Test to ensure the proper input. Terminate program if command line inputs are not given
+  if(argc<4){
+    std::cout << "Improper entry. Please also enter 'param_filename obs_filename sigma_n sigma_f l' on same line." << std::endl;
+    exit(1);
+  }
+  else{
+    param_filename = argv[1];
+    obs_filename = argv[2];
+    sigma_n = atof(argv[3]);
+    sigma_f = atof(argv[4]);
+    l = atof(argv[5]);
+  }
+  
+  /*SYSTEM and OUTPUT--
+***********************************************************/
+  
+  train = 1000;
+  test = 719;
+  
+  samples = 1;
+  param = 4;
+  observables = 12;
+  
+  epsilon = 1e-8;
+  
+  seed = std::chrono::system_clock::now().time_since_epoch().count();
+  
+  outfilename = "testset.dat";
+  trainfilename = "trainset.dat";
+  
+  /*HYPERPARAMETERS--
+***********************************************************/
+  
+  hyperp = 3;
+  
+  //random number generator
+  std::default_random_engine generator(seed);
+  std::normal_distribution<double> dist(0,1.0);
+  
+  //armadillo matrices and vectors for computational use
+  arma::mat xvec_train_mat = arma::zeros<arma::mat>(train,param),
+    yvec_train_mat = arma::zeros<arma::mat>(train,observables),
+    xvec_test_mat = arma::zeros<arma::mat>(test,param),
+    
+    output_mat = arma::zeros<arma::mat>(test,param + 3 + samples);
+  
+  arma::vec hyperp_vec = arma::zeros<arma::vec> (hyperp),
+    param_x_vec = arma::zeros<arma::vec> (param),
+    BF_vec = arma::zeros<arma::vec> (train),
+    error_vec = arma::zeros<arma::vec> (train);
+  
+  //hyperparamter vector for use in 'function'
+  hyperp_vec(0) = sigma_f;
+  hyperp_vec(1) = l;
+  hyperp_vec(2) = sigma_n;
+  
+  //Generate Functions	
+  ifile.open(param_filename);
+  for(i=0;i<train;i++){
+    for(j=0;j<param;j++){
+      ifile >> xvec_train_mat(i,j);
+    }
+  }
+  ifile.close();
+  ifile.open(obs_filename);
+  for(i=0;i<train;i++){
+    for(j=0;j<observables;j++){
+      ifile >> yvec_train_mat(i,j);
+    }
+  }
+  ifile.close();
+  observables=1;
+  
+  int lhp_samples = test;
+  arma::mat hypercube = arma::zeros<arma::mat>(lhp_samples,param);
+  arma::vec hyperlist = arma::linspace<arma::vec>(0,lhp_samples-1,lhp_samples);
+  for(int i=0;i<param;i++){
+    hyperlist=shuffle(hyperlist);
+    hypercube.col(i) = hyperlist;
+  }
+  
+  /*Now, construct full numerical lhp sampling using the input from file
+    and the previous generic sampling matrix
+  */
+  float init,final;
+  
+  for(int i=0;i<param;i++){
+    init = 0.1;
+    final = 1.5;
+    dx = (final-init)/(lhp_samples-1);
+    hyperlist = hypercube.col(i);
+    hyperlist = init + dx*hyperlist;
+    hypercube.col(i) = hyperlist;
+  }
+  
+  
+  for(i=0;i<test;i++){
+    for(j=0;j<param;j++){
+      xvec_test_mat(i,j) = hypercube(i,j);
+    }
+  }
 
-	//train = 26;
-	train = 20;
-	test = 100;
+  //Execute posterior function generation
+  //	output_mat = gaussian_process_solver_basic(kernal_square_exp_noise_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
+  output_mat = gaussian_process_solver_basic(kernel_square_exp_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
+  //Write the output file
+  write_output(output_mat, test, param, observables, samples, outfilename);
+  //Write the trainingset to file
+  write_trainset(xvec_train_mat, yvec_train_mat, trainfilename);
+  //Log Likelihood
+  std::cout << "log likelihood_function:\n" << log_likelihood_function(yvec_train_mat, xvec_train_mat, kernal_square_exp_function, hyperp_vec) << std::endl;
+  
+  arma::vec mean;
+  arma::mat variance;
+  double log_likelihood;
+  arma::vec hyper_p(2);
 
-	samples = 3;
-	param = 1;
-	observables = 1;
+  hyper_p(0) = sigma_f;
+  hyper_p(1) = l;
 
-	epsilon = 1e-8;
+  gaussian_process(xvec_train_mat, yvec_train_mat, kernel_square_exp_function, hyper_p, sigma_n, xvec_test_mat, mean, variance, log_likelihood);
+  std::cout << "LL:\n" << log_likelihood << std::endl;
 
-	seed = std::chrono::system_clock::now().time_since_epoch().count();
+  return 0;
 
-	/*HYPERPARAMETERS--
-	***********************************************************/
-
-	hyperp = 3;
-	sigma_n = 0.0001;
-	sigma_f = 0.003;
-	l = 0.25;
-
-	
-
-	//random number generator
-	std::default_random_engine generator(seed);
-	std::normal_distribution<double> dist(0,1.0);
-
-	//armadillo matrices and vectors for computational use
-	arma::mat xvec_train_mat = arma::zeros<arma::mat>(train,param),
-		  yvec_train_mat = arma::zeros<arma::mat>(train,observables),
-		  xvec_test_mat = arma::zeros<arma::mat>(test,param),
-
-		  output_mat = arma::zeros<arma::mat>(test,param + 3 + samples);
-
-	arma::vec hyperp_vec = arma::zeros<arma::vec> (hyperp),
-		  param_x_vec = arma::zeros<arma::vec> (param),
-	  dely_vec = arma::zeros<arma::vec> (train),
-	  BF_vec = arma::zeros<arma::vec> (train),
-	  error_vec = arma::zeros<arma::vec> (train);
-
-	//hyperparamter vector for use in 'function'
-	hyperp_vec(0) = sigma_f;
-	hyperp_vec(1) = l;
-	hyperp_vec(2) = sigma_n;
-
-	double theta1=0.7;
-	double theta2=1.5;
-     	double theta3=10;
-
-	hyperp_vec(0) = theta1;
-	hyperp_vec(1) = theta2;
-	hyperp_vec(2) = theta3;
-	/*
-	//Generate Functions	
-	ifile.open(infilename);
-	for(i=0;i<train;i++){
-	  ifile >> dely_vec(i);
-	  ifile >> BF_vec(i);
-	  ifile >> error_vec(i);
-	  xvec_train_mat(i,0) = dely_vec(i);
-	  yvec_train_mat(i,0) = BF_vec(i);
-	}
-	*/
-	x_init = 0;
-	x_final = 10;;
-	dx = (x_final - x_init)/(double) train;
-	for(i=0;i<train;i++){
-	  xvec_train_mat(i,0) = x_init + i*dx;
-	  yvec_train_mat(i,0) = sin(xvec_train_mat(i,0));
-	}
-	//	x_init = dely_vec(0);
-	//	x_final = dely_vec(train-1);
-	x_init = -5;
-	x_final = 15;
-	dx = (x_final - x_init)/(double) test;
-	for(i=0;i<test;i++){
-	  xvec_test_mat(i,0) = x_init + ((double) i)*dx;
-	}
-
-	//Execute posterior function generation
-	//	output_mat = gaussian_process_solver_basic(kernal_square_exp_noise_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
-	output_mat = gaussian_process_solver_basic(kernal_square_exp_function, xvec_train_mat, yvec_train_mat, xvec_test_mat, samples, hyperp_vec, epsilon);
-	//Write the output file
-	write_output(output_mat, test, param, observables, samples, outfilename);
-	//Write the trainingset to file
-	write_trainset(xvec_train_mat, yvec_train_mat, "trainset.dat");
-
-	return 0;
 }
 
 arma::vec hyperp_optimize_function(
