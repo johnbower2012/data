@@ -159,7 +159,10 @@ int main(int argc, char* argv[]){
   hyper_p(0) = sigma_f;
   hyper_p(1) = l;
 
-  gaussian_process(xvec_train_mat, yvec_train_mat, kernel_square_exp_function, hyper_p, sigma_n, xvec_test_mat, mean, variance, log_likelihood);
+  arma::vec y_vec = yvec_train_mat.col(0);
+  xvec_train_mat = xvec_train_mat.t();
+  xvec_test_mat = xvec_test_mat.t();
+  gaussian_process(xvec_train_mat, y_vec, kernel_square_exp_function_, hyper_p, sigma_n, xvec_test_mat, mean, variance, log_likelihood);
   std::cout << "LL:\n" << log_likelihood << std::endl;
 
   return 0;

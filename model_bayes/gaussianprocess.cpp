@@ -101,6 +101,32 @@ arma::mat kernel_square_exp_function(arma::mat A, arma::mat B, arma::vec hyperp_
 
 	return kernel_matrix;
 }
+arma::mat kernel_square_exp_function_(arma::mat A, arma::mat B, arma::vec hyperp_vec){
+	double xi, xj, sum, diff,
+			theta1, theta2;
+	int i, j, k,
+		ai = A.n_cols, bi = B.n_cols,
+		param = A.n_rows;
+	arma::mat kernel_matrix = arma::zeros<arma::mat> (ai, bi);
+
+	theta1 = hyperp_vec(0)*hyperp_vec(0);
+	theta2 = 1.0/hyperp_vec(1)/hyperp_vec(1)/2.0;
+
+	for(i=0;i<ai;i++){
+		for(j=0;j<bi;j++){
+			sum = 0.0;
+			for(k=0;k<param;k++){
+			  xi = A(k,i);
+			  xj = B(k,j);
+			  diff = xi - xj;
+			  sum += diff*diff;
+			}
+			kernel_matrix(i,j) = theta1*exp(-sum*theta2);
+		}
+	}
+
+	return kernel_matrix;
+}
 arma::mat kernel_periodic_function(arma::mat A, arma::mat B, arma::vec hyperp_vec){
 	double xi, xj, sum, diff,
 			theta1, theta2, theta3,
@@ -405,19 +431,27 @@ void gaussian_process(const arma::mat &x_mat, const arma::vec &y_vec, arma::mat 
   int param = x_mat.n_rows;
   int train = x_mat.n_cols;
   int test = x_star_mat.n_cols; 
+
   arma::mat kernel = kernel_function(x_mat, x_mat, hyperp_param);
   arma::mat kernel_star = kernel_function(x_mat,x_star_mat, hyperp_param);
   arma::mat kernel_starstar = kernel_function(x_star_mat,x_star_mat, hyperp_param);
   arma::mat I = arma::eye<arma::mat>(train,train);
 
   arma::mat L = arma::chol(kernel+sigma_n*sigma_n*I);
-  arma::vec alpha = arma::solve(L.t(),arma::solve(L,y_vec));
+  arma::mat L_trans = L.t();
+  arma::vec temp_vec = arma::solve(L,y_vec);
+  arma::vec alpha = arma::solve(L_trans,temp_vec);
   mean = kernel_star.t()*alpha;
+  printf("L,k*\n");
   arma::mat var = arma::solve(L,kernel_star);
   variance = kernel_starstar - var.t()*var;
-  
-  arma::mat temp = y_vec.t()*alpha;
-  log_likelihood = -0.5*temp(0,0) - arma::trace(L) - 0.5*train*log(2.0*acos(-1));
+
+  arma::mat temp_mat = y_vec.t()*alpha;
+  double log_trace = 0.0;
+  for(int i=0;i<train;i++){
+    log_trace += log(L(i,i));
+  }
+  log_likelihood = -0.5*temp_mat(0,0) - log_trace - 0.5*train*log(2.0*acos(-1));
 }
 /**REGRESSION FUNCTIONS
 **********************************************/
