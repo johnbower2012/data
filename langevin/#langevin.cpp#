@@ -99,7 +99,7 @@ int main(int argc, char* argv[]){
     X=0.0;
     V=0.0;
     for(int j=0;j<dimensions;j++){
-      part1.position(j) = (i+j)*8.12312+7.234123;
+p      part1.position(j) = (i+j)*8.12312+7.234123;
       X += part1.position(j)*part1.position(j);
       part1.velocity(j) = j*pow(-1,i);
       V += part1.velocity(j)*part1.velocity(j);
