@@ -26,6 +26,7 @@ class particle_system{
 public:
   int particle_count; //number of particles
   int dimensions; //variable count
+  int observables; //stats to be collected
   double size; //periodic boundary
 
   double delta_t; //time step + variance of langevin force
@@ -36,8 +37,7 @@ public:
   std::vector<particle> system; //the system to be evolved
   arma::mat position; //position of system particles, used for verlet
   arma::mat velocity; //velocity of system particles, used for verlet
-  arma::mat statistics_momenta; //average momentum squared & variance
-  //  arma::vec (*force)(particle part1, particle part2); //choice of evolution force
+  arma::mat statistics; //average momentum, position
 
   particle_system(int Dimensions, double Size, double Delta_t, double Gamma, double Temp); //constructor
   
@@ -49,10 +49,10 @@ public:
   arma::vec electrostatic_force(); //basic repulsive force
   arma::vec electrostatic_force_periodic(); //basic repulsive force to periodic boundary
 
-  arma::mat verlet(int steps); //evolve one time step using verlet
-  void verlet_periodic(int steps); //evolve one time step using periodic
+  void verlet(int steps); //evolve one time step using verlet
+  void verlet_periodic(int steps, bool repulsion); //evolve one time step using periodic
 
-  void statistics_momentum();
+  void statistics_run();
 
   void update(); //update system info
   void run(int steps); //run system 'steps' times
@@ -85,9 +85,10 @@ int main(int argc, char* argv[]){
   double charge=1.0;
   double X,V;
   bool periodic=true;
+  bool repulsion=false;
 
-  int dimensions=3;
-  int particles=50;
+  int dimensions=2;
+  int particles=2;
   int steps=atoi(argv[1]);
   particle_system system(dimensions, size, delta_t, gamma, temp);
   arma::vec x = arma::zeros<arma::vec>(dimensions+1);
@@ -111,8 +112,10 @@ int main(int argc, char* argv[]){
 
   system.position.print("starting position:");
   system.velocity.print("starting velocity:");
-  system.verlet_periodic(steps);
-  system.statistics_momenta.print("----------\nstatistics");
+
+  system.verlet_periodic(steps,repulsion);
+
+  system.statistics.print("----------\nstatistics");
   system.position.print("----------\nending position:");
   system.velocity.print("ending velocity");
 
@@ -170,6 +173,8 @@ particle_system::particle_system(int Dimensions, double Size, double Delta_t, do
   this->temp = Temp;
   this->particle_count=0;
   this->sigma=sqrt(2*Temp*gamma*delta_t);
+  this->observables=1+Dimensions;
+  this->statistics = arma::zeros<arma::mat>(2,observables);
 }
 void particle_system::add(particle new_particle){
   this->system.push_back(new_particle);
@@ -178,16 +183,16 @@ void particle_system::add(particle new_particle){
   this->position.col(particle_count-1) = new_particle.position;
   this->velocity.resize(dimensions,particle_count);
   this->position.col(particle_count-1) = new_particle.velocity;
-  this->statistics_momenta.resize(dimensions,2*particle_count);
 }
 void particle_system::add_periodic(particle new_particle, bool True){
   double x=0.0,v=0.0;
   this->system.push_back(new_particle);
   for(int i=0;i<dimensions;i++){
     system[particle_count].position(i) = std::fmod(new_particle.position(i),size);
-    if(system[particle_count].position(i) < 0){
+    while(system[particle_count].position(i) < 0){
       system[particle_count].position(i) += size;
-    }else if(system[particle_count].position(i) > size){
+    }
+    while(system[particle_count].position(i) > size){
       system[particle_count].position(i) -= size;
     }
     x += system[particle_count].position(i)*system[particle_count].position(i);
@@ -246,7 +251,7 @@ arma::vec particle_system::relative_coordinate(){
     for(int j=0;j<i;j++){
       r2=0.0;
       for(int k=0;k<dim;k++){
-	index = (i*(i-1)/2 + j)*(dim) + k;
+ 	index = (i*(i-1)/2 + j)*(dim) + k;
 	if(k==dim-1){
 	  relcoord(index) = sqrt(r2);
 	  continue;
@@ -262,15 +267,15 @@ arma::vec particle_system::relative_coordinate(){
 }
 arma::vec particle_system::langevin_force(){
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-  double mass;
+  double sqrt_mass;
   std::default_random_engine generator (seed);
   std::normal_distribution<double> distribution(0.0,1.0);
   arma::vec force = arma::zeros<arma::vec>(particle_count*dimensions);
   for(int i=0;i<particle_count;i++){
-    mass = sqrt(system[i].mass);
+    sqrt_mass = sqrt(system[i].mass);
     for(int j=0;j<dimensions;j++){
       force(i*dimensions+j) = -gamma*system[i].mass*velocity(j,i);
-      force(i*dimensions+j) += sigma*mass*distribution(generator);
+      force(i*dimensions+j) += sigma*sqrt_mass*distribution(generator);
     }
   }
   return force;
@@ -318,9 +323,10 @@ arma::vec particle_system::electrostatic_force_periodic(){
       }
     }
   }
-  return force;      
+  force.print("em force");
+  return force;
 }
-arma::mat particle_system::verlet(int steps){
+void particle_system::verlet(int steps){
   double half_delta_t = delta_t/2.0;
   double half_delta_tsq = delta_t*half_delta_t;
   double acc_jk;
@@ -351,19 +357,22 @@ arma::mat particle_system::verlet(int steps){
     velocity.print();
     printf("-------------------\n");
   }
-  return position;
 }
-void particle_system::verlet_periodic(int steps){
+void particle_system::verlet_periodic(int steps,bool repulsion){
   double half_delta_t = delta_t/2.0;
   double half_delta_tsq = delta_t*half_delta_t;
   double acc_jk,x,v;
   int dim = this->dimensions+1;
   arma::vec force = arma::zeros<arma::vec>(particle_count*dimensions);
   arma::vec relcoord = arma::zeros<arma::vec>(particle_count*(particle_count-1)/2*dim);
-  statistics_momenta = arma::zeros<arma::mat>(dimensions+1,particle_count*2);
-  //force = electrostatic_force_periodic();
-  force = langevin_force();
-
+  statistics = arma::zeros<arma::mat>(2,observables);
+  if(repulsion==true){
+    force = electrostatic_force_periodic();
+    force += langevin_force();
+  } else{
+    force = langevin_force();
+  }
+  
   for(int i=0;i<steps;i++){
     for(int j=0;j<particle_count;j++){
       x=0.0;
@@ -371,9 +380,10 @@ void particle_system::verlet_periodic(int steps){
 	acc_jk = force(j*dimensions+k)/system[j].mass;
 	position(k,j) = position(k,j) + delta_t*velocity(k,j) + half_delta_tsq*acc_jk;
 	position(k,j) = std::fmod(position(k,j),size);
-	if(position(k,j) > size){
+	while(position(k,j) > size){
 	  position(k,j) -= size;
-	} else if(position(k,j) < 0){
+	}
+	while(position(k,j) < 0){
 	  position(k,j) += size;
 	}
 	x += position(k,j)*position(k,j);
@@ -381,8 +391,12 @@ void particle_system::verlet_periodic(int steps){
       }
       position(dimensions,j) = sqrt(x);
     }
-    //force = electrostatic_force_periodic();
-    force = langevin_force();
+    if(repulsion==true){
+      force = electrostatic_force_periodic();
+      force += langevin_force();
+    } else{
+      force = langevin_force();
+    }
     v=0.0;
     for(int j=0;j<particle_count;j++){
       for(int k=0;k<dimensions;k++){
@@ -392,28 +406,36 @@ void particle_system::verlet_periodic(int steps){
       }
       velocity(dimensions,j) = sqrt(v);
     }
-    statistics_momentum();
+    statistics_run();
+    printf("step %d:\n",i);
+    position.print("pos");
+    velocity.print("vec");
+    printf("-------------------\n");
   }
-  for(int i=0;i<particle_count;i++){
-    for(int j=0;j<dimensions+1;j++){
-      statistics_momenta(j,2*i) /= (double) (steps);
-      statistics_momenta(j,2*i+1) /= (double) (steps);
-      statistics_momenta(j,2*i+1) = sqrt(statistics_momenta(j,2*i+1) - statistics_momenta(j,2*i)*statistics_momenta(j,2*i));
-    }
+  for(int i=0;i<observables;i++){
+    statistics(0,i) /= (double) steps;
+    statistics(1,i) /= (double) steps;
+    statistics(1,i) -= statistics(0,i)*statistics(0,i);
+    statistics(1,i) = sqrt(statistics(1,i));
   }
 }
-void particle_system::statistics_momentum(){
-  double momentum,mass;
+void particle_system::statistics_run(){
+  double momentum=0.0,mass=0.0;
+  arma::vec avg_positions = arma::zeros<arma::vec>(dimensions);
   for(int i=0;i<particle_count;i++){
     mass = system[i].mass;
-    for(int j=0;j<dimensions;j++){
-      momentum = mass*mass*velocity(j,i)*velocity(j,i);
-      statistics_momenta(j,i*2) += momentum;
-      statistics_momenta(j,i*2+1) += momentum*momentum;
-    }
     momentum = mass*mass*velocity(dimensions,i)*velocity(dimensions,i);
-    statistics_momenta(dimensions,i*2) += momentum;
-    statistics_momenta(dimensions,i*2+1) += momentum*momentum;
+    statistics(0,i) += momentum;
+    statistics(1,i) += momentum*momentum;
+    for(int j=0;j<dimensions;j++){
+      avg_positions(j) += position(j,i);
+    }
+  }
+  statistics(0,0) += momentum;
+  statistics(1,0) += momentum*momentum;
+  for(int i=0;i<dimensions;i++){
+    statistics(0,i+1) += avg_positions(i);
+    statistics(1,i+1) += avg_positions(i)*avg_positions(i);
   }
 }
 void particle_system::update(){
