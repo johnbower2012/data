@@ -76,22 +76,16 @@ public:
   MAIN FUNCTION
  ********************/
 std::ofstream ofile;
-
-int main(int argc, char* argv[]){
-  //ARRANGE DETAILS
-  int steps=0;
-  int dimensions=2;
-  int particles=20;
   int print_checks=0;
   
   double size=10.0;
-  double delta_t=0.1;
+  double delta_t=0.05;
   double gamma=0.3;
   double temp=100;
   double mass=1.0;
   double charge=1.0;
 
-  bool repulsion=true;
+  bool repulsion=false;
 
   //CHECK FOR PROPER USAGE
   if(argc!=3){
@@ -350,6 +344,7 @@ arma::vec particle_system::electrostatic_force_periodic(){
       }
     }
   }
+  force.print("em force");
   return force;
 }
 void particle_system::verlet(int steps){
@@ -424,8 +419,8 @@ void particle_system::verlet_periodic(int steps,bool repulsion, int print_checks
     } else{
       force = langevin_force();
     }
+    v=0.0;
     for(int j=0;j<particle_count;j++){
-      v=0.0;
       for(int k=0;k<dimensions;k++){
 	acc_jk = force(j*dimensions+k)/system[j].mass;
 	velocity(k,j) += half_delta_t*acc_jk;
