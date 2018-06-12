@@ -53,7 +53,7 @@ public:
   void verlet(int steps); //evolve one time step using verlet
   void verlet_periodic(int steps, bool repulsion, int print_checks); //evolve one time step using periodic
 
-  void statistics_run();
+  void statistics_run(int step);
 
   void update(); //update system info
   void run(int steps); //run system 'steps' times
@@ -81,8 +81,8 @@ int main(int argc, char* argv[]){
   //ARRANGE DETAILS
   int steps=0;
   int dimensions=2;
-  int particles=20;
-  int print_checks=0;
+  int particles=50;
+  int print_checks=steps/10;
   
   double size=10.0;
   double delta_t=0.1;
@@ -94,12 +94,11 @@ int main(int argc, char* argv[]){
   bool repulsion=true;
 
   //CHECK FOR PROPER USAGE
-  if(argc!=3){
-    printf("Improper usage. Enter also 'steps print_checks' on same line.\n");
+  if(argc!=2){
+    printf("Improper usage. Enter also 'steps' on same line.\n");
     exit(1);
   } else{
     steps=atoi(argv[1]);
-    print_checks=atoi(argv[2]);
   }
   
   //BEGIN DEFINITIONS
@@ -433,7 +432,7 @@ void particle_system::verlet_periodic(int steps,bool repulsion, int print_checks
       }
       velocity(dimensions,j) = sqrt(v);
     }
-    statistics_run();
+    statistics_run(i+1);
     if(i%print_checks==0){
       printf("----------\nstep: %d\n",i);
     }
@@ -442,11 +441,10 @@ void particle_system::verlet_periodic(int steps,bool repulsion, int print_checks
   for(int i=0;i<observables;i++){
     statistics(0,i) /= (double) steps;
     statistics(1,i) /= (double) steps;
-    statistics(1,i) -= statistics(0,i)*statistics(0,i);
     statistics(1,i) = sqrt(statistics(1,i));
   }
 }
-void particle_system::statistics_run(){
+void particle_system::statistics_run(int step){
   double momentum=0.0,mass=0.0;
   arma::vec avg_positions = arma::zeros<arma::vec>(dimensions+1);
   for(int i=0;i<particle_count;i++){
@@ -458,11 +456,11 @@ void particle_system::statistics_run(){
   }
   momentum /= (double) particle_count;
   statistics(0,0) += momentum;
-  statistics(1,0) += momentum*momentum;
+  statistics(1,0) += (momentum - statistics(0,0)/(double) step)*(momentum - statistics(0,0)/(double) (step));
   for(int i=0;i<dimensions+1;i++){
     avg_positions(i) /= (double) particle_count;
     statistics(0,i+1) += avg_positions(i);
-    statistics(1,i+1) += avg_positions(i)*avg_positions(i);
+    statistics(1,i+1) += (avg_positions(i) - statistics(0,i+1)/(double) (step))*(avg_positions(i) - statistics(0,i+1)/(double) (step));
   }
 }
 void particle_system::update(){
