@@ -7,26 +7,18 @@ int main(int argc, char* argv[]){
   std::default_random_engine generator(seed);
   std::normal_distribution<double> distribution(7.3,1.5);
 
-  double mean=0.0,std=0.0,x=0.0,mean2=0.0,std2=0.0;
-  int steps=100000;
+  double mean=0.0,std=0.0,x=0.0;
+  int steps=10000;
   for(int i=0;i<steps;i++){
     x = distribution(generator);
     mean += x;
     std += x*x;
-    mean2 += x*x;
-    std2 += x*x*x*x;
     //    std += (x-mean/(double) (i+1))*(x-mean/(double) (i+1));
   }
   mean /= (double) steps;
   std /= (double) steps;
-  mean2 /= (double) steps;
-  std2 /= (double) steps;
   std -= mean*mean;
-  std2 -= mean2*mean2;
-  std = sqrt(std);
-  std2 = sqrt(std2);
   printf("%f +/- %f\n",mean,std);
-  printf("%f +/- %f\n",mean2,std2);
 
   return 0;
 }
