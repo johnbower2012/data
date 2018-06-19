@@ -56,7 +56,6 @@ int main(int argc, char* argv[]){
   obs_matrix = arma::zeros<arma::mat>(runs,observables);
   delY_vec = arma::zeros<arma::vec>(lines);
   load_file(files, lines, runs, infilename, delY_vec, val_matrix);
-  //obs_matrix_median_widths(files,obs_file,val_matrix,delY_vec,obs_matrix);
   obs_matrix_moments(files,obs_file,val_matrix,delY_vec,obs_matrix);
   obs_matrix.print();
   

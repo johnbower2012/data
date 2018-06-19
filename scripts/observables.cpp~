@@ -64,8 +64,8 @@ int main(int argc, char* argv[]){
 	     CONDUCT PCA
 	     PRINT
   *********/
-  std::string printname = "moments_experimental_data.dat";
-  /*
+  std::string printname = "moments_model_data.dat";
+ 
   arma::mat tval_matrix,cov_matrix,eigvec_matrix,print_matrix;
   arma::vec eigval_vec,mean_vec;
   print_matrix = arma::zeros<arma::mat>(observables,observables+1);
@@ -96,9 +96,9 @@ int main(int argc, char* argv[]){
     sum(i) /= sum(observables-1);
     printf("%f\n",sum(i));
   }
-*/
-  //print_file(printname,print_matrix);
-  print_file(printname,obs_matrix);
+
+  print_file(printname,print_matrix);
+  //print_file(printname,obs_matrix);
 
   delete[] val_matrix;
   delete[] infilename;

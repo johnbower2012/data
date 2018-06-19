@@ -89,6 +89,8 @@ int main(int argc, char* argv[]){
 
   bool repulsion=true;
 
+  std::string filename = "sample.dat";
+
   arma::mat sample_matrix = arma::zeros<arma::mat>(dimensions+1,particles);
 
   //CHECK FOR PROPER USAGE
@@ -110,27 +112,23 @@ int main(int argc, char* argv[]){
   printf("Steps: %d\n",steps);
   system.verlet_periodic(steps,repulsion,print_checks);
 
-  //system.statistics.print("----------\n\nending statistics");
   system.position.print("----------\nending position:");
-  //system.velocity.print("ending velocity");
   
   sample_matrix = system.position;
-  sample_matrix.print("position copied:");
   sample_matrix.resize(dimensions,particles);
-  sample_matrix.print("distribution:");
 
   map_system map(size);
   for(int i=0;i<dimensions;i++){
-    map.add((double) i,(double)i+5);
+    map.add(0,(double) i + 5);
   }
-  map.map.print("map");
+  map.map.print("MAP:");
   sample_matrix = map.map_x_to_y(sample_matrix);
   sample_matrix.print("MAPPED:");
 
-  ofile.open("result.dat");
-  for(int i=0;i<particles;i++){
-    for(int j=0;j<dimensions;j++){
-      ofile << std::setw(15) << system.position(j,i);
+  ofile.open(filename);
+  for(int i=0;i<dimensions;i++){
+    for(int j=0;j<particles;j++){
+      ofile << " " << sample_matrix(i,j);
     }
     ofile << std::endl;
   }
