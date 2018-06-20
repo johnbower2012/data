@@ -1,10 +1,7 @@
-/* I just realized there is a fairly large flaw in my output
-	matrix in the GPS. I account for multiple obervables in 
-	the mean and std output, but not the generated functions.
-	Update in future. Easy fix.
+/* COMMENTS SECTION:
+
 
 	***********************************************************/
-
 
 #include<iostream>
 #include<iomanip>
@@ -32,7 +29,7 @@ int main(int argc, char* argv[]){
   double dx, x_init, x_final;
   double sigma_n, sigma_f, l;
 
-  sigma_n = 0.1;
+  sigma_n = 0.01;
   sigma_f = 0.1;
   l = 0.1;
 
@@ -61,7 +58,7 @@ int main(int argc, char* argv[]){
   samples = 1;
   param = 4;
   observables = 12;
-  
+
   epsilon = 1e-8;
   
   seed = std::chrono::system_clock::now().time_since_epoch().count();
