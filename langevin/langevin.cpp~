@@ -76,8 +76,8 @@ std::ofstream ofile;
 int main(int argc, char* argv[]){
   //ARRANGE DETAILS
   int steps=0;
-  int dimensions=5;
-  int particles=10;
+  int dimensions=2;
+  int particles=1000;
   int print_checks=0.0;
   
   double size=10.0;
@@ -88,6 +88,8 @@ int main(int argc, char* argv[]){
   double charge=1.0;
 
   bool repulsion=true;
+
+  std::string filename = "sample.dat";
 
   arma::mat sample_matrix = arma::zeros<arma::mat>(dimensions+1,particles);
 
@@ -101,7 +103,7 @@ int main(int argc, char* argv[]){
     if(print_checks<=0.0){
       print_checks=1.0;
     }
-    print_checks=0.0;
+    //print_checks=0.0;
   }
   
   //BEGIN DEFINITIONS
@@ -110,8 +112,10 @@ int main(int argc, char* argv[]){
   printf("Steps: %d\n",steps);
   system.verlet_periodic(steps,repulsion,print_checks);
 
+  system.statistics.print("----------\nending statistics:");  
   system.position.print("----------\nending position:");
-  
+  system.velocity.print("----------\nending velocity:");
+
   sample_matrix = system.position;
   sample_matrix.resize(dimensions,particles);
 
@@ -123,7 +127,7 @@ int main(int argc, char* argv[]){
   sample_matrix = map.map_x_to_y(sample_matrix);
   sample_matrix.print("MAPPED:");
 
-  ofile.open("result.dat");
+  ofile.open(filename);
   for(int i=0;i<dimensions;i++){
     for(int j=0;j<particles;j++){
       ofile << " " << sample_matrix(i,j);
@@ -151,7 +155,7 @@ particle::particle(){
 particle::particle(int Dimensions){
   this->dimensions = Dimensions;
   this->mass = 1.0;
-  this->charge = 1.0;
+  this->charge = 0.1;
   this->position = arma::zeros<arma::vec>(dimensions+1);
   this->velocity = arma::zeros<arma::vec>(dimensions+1);
 }
