@@ -14,12 +14,18 @@ double median_width_fabs_function(const arma::mat &function, double factor);
 double zeroth_moment(const arma::mat &function);
 double first_moment(const arma::mat &function);
 double second_moment(const arma::mat &function);
+double zeroth_moment_fabs(const arma::mat &function);
+double first_moment_fabs(const arma::mat &function);
+double second_moment_fabs(const arma::mat &function);
 
 void obs_matrix_median_widths(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
 void obs_matrix_moments(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
+void obs_matrix_moments_fabs(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
 
 void load_file(int files, int lines, int runs, std::string *&infilename, arma::vec &delY_vec, arma::mat *&val_matrix);
+void print_file(std::string outfilename, std::string title, arma::mat matrix);
 void print_file(std::string outfilename, arma::mat matrix);
+void print_fractional_sum(arma::vec vector);
 
 int main(int argc, char* argv[]){
   std::string *infilename,*outfilename;
@@ -27,6 +33,7 @@ int main(int argc, char* argv[]){
   int i,j,k;
   infilename = new std::string[observables];
   outfilename = new std::string[observables];
+  std::string dest_folder;
 
   files=4;
   obs_file=3;
@@ -37,72 +44,92 @@ int main(int argc, char* argv[]){
     exit(1);
   }
   else{
-    infilename = new std::string[observables];
-    lines=atoi(argv[1]);
-    runs=atoi(argv[2]);
-    files=atoi(argv[3]);
+    infilename = new std::string[files];
+    dest_folder = argv[1];
+    lines=atoi(argv[2]);
+    runs=atoi(argv[3]);
+    files=atoi(argv[4]);
     for(i=0;i<files;i++){
-      infilename[i]=argv[4+i];
+      infilename[i]=argv[5+i];
     }
   }
+  printf("Arguments read in as:\n");
+  printf("observables.x %s %d %d %d",dest_folder.c_str(),lines,runs,files);
+  for(i=0;i<files;i++){
+    printf(" %s",infilename[i].c_str());
+  }
+  printf("\n");
 
   /*********
 	     LOAD FILE
 	     CALCULATE OBS_MAT
   *********/
   arma::mat *val_matrix, obs_matrix;
-  arma::vec delY_vec;
+  arma::vec delY_vec, obs_error;
   val_matrix = new arma::mat[files];
   obs_matrix = arma::zeros<arma::mat>(runs,observables);
   delY_vec = arma::zeros<arma::vec>(lines);
+  obs_error = arma::zeros<arma::vec>(observables);
+  for(i=0;i<files;i++){
+    obs_error(i*obs_file) = 0.01;
+    obs_error(1+i*obs_file) = 0.01;
+    obs_error(2+i*obs_file) = 0.005;
+  }
   load_file(files, lines, runs, infilename, delY_vec, val_matrix);
-  obs_matrix_moments(files,obs_file,val_matrix,delY_vec,obs_matrix);
-  obs_matrix.print();
-  
+  obs_matrix_moments_fabs(files,obs_file,val_matrix,delY_vec,obs_matrix);
+
   /*********
 	     CONDUCT PCA
 	     PRINT
   *********/
-  std::string printname = "moments_model_data.dat";
+
  
-  arma::mat tval_matrix,cov_matrix,eigvec_matrix,print_matrix;
+  arma::mat tval_matrix,zcov_matrix,eigvec_matrix,print_matrix;
   arma::vec eigval_vec,mean_vec;
   print_matrix = arma::zeros<arma::mat>(observables,observables+1);
   tval_matrix = arma::zeros<arma::mat>(observables,observables);
-  cov_matrix = arma::zeros<arma::mat>(observables,observables);
+  zcov_matrix = arma::zeros<arma::mat>(observables,observables);
   eigvec_matrix = arma::zeros<arma::mat>(observables,observables);
   eigval_vec = arma::zeros<arma::vec>(observables);
   mean_vec = arma::zeros<arma::vec>(observables);
 
-  tval_matrix = calculate_tmatrix_function(obs_matrix, eigval_vec, eigvec_matrix, mean_vec, cov_matrix);
+  tval_matrix = calculate_tmatrix_function(obs_matrix, obs_error, eigval_vec, eigvec_matrix, mean_vec, zcov_matrix);
 
-  printf("+++++ eigvalues +++++\n");
-  eigval_vec.print();
-  printf("+++++ eigvectors +++++\n");
-  eigvec_matrix.print();
+  print_fractional_sum(eigval_vec);
+  eigval_vec.print("+++++ eigvalues +++++");
+  eigvec_matrix.print("+++++ eigvectors +++++");
+
   for(i=0;i<observables;i++){
     print_matrix(i,0) = eigval_vec(i);
     for(j=0;j<observables;j++){
-      print_matrix(i,j+1) = eigvec_matrix(i,j);
+      print_matrix(i,j+1) = eigvec_matrix(j,i);
     }
   }
-  arma::vec sum = arma::zeros<arma::vec>(observables);
-  for(i=0;i<observables;i++){
-    sum(i) = eigval_vec(i);
-    sum(i) += sum(abs(i-1));
-  }
-  for(i=0;i<observables;i++){
-    sum(i) /= sum(observables-1);
-    printf("%f\n",sum(i));
-  }
+  std::string printname;
+  std::string title;
+  printname = "moments_model_data.dat";
+  title = "#pipi ppbar pK KK\n#m0 m1 m2";
+  print_file(printname,title,obs_matrix);
 
-  print_file(printname,print_matrix);
-  //print_file(printname,obs_matrix);
+  printname = "moments_model_eigvec.dat";
+  title = "#colvec\n#pipi ppbar pK KK\n#m0 m1 m2";
+  print_file(printname,title,eigvec_matrix);
+
+  printname = "moments_model_pca.dat";
+  title = "#eigval col -- eigvec rows\n#pipi ppbar pK KK\n#m0 m1 m2";
+  print_file(printname,title,print_matrix);
+
+  print_matrix = obs_matrix*eigvec_matrix;
+  printname = "moments_model_z.dat";
+  title = "#moments_matrix*eigenvectors_matrix";
+  print_file(printname,title,print_matrix);
+
+  
 
   delete[] val_matrix;
   delete[] infilename;
   delete[] outfilename;
-  
+
   return 0;
 }
 
@@ -264,7 +291,7 @@ double zeroth_moment(const arma::mat &function){
   int points = function.n_rows - 1;
   double zero = 0.0, f, dx;
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     dx = function(i+1,0) - function(i,0);
     zero += f*dx;
   }
@@ -273,43 +300,104 @@ double zeroth_moment(const arma::mat &function){
 double first_moment(const arma::mat &function){
   int points = function.n_rows - 1;
   double zero = 0.0, first = 0.0, f, x, dx;
+  /*
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     dx = function(i+1,0) - function(i,0);
     zero += f*dx;
   }
+  */
   for(int i=0;i<points;i++){
     f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     first += f*x*dx;
   }
-  first /= zero;
+  //  first /= zero;
   return first;
 }
 double second_moment(const arma::mat &function){
   int points = function.n_rows - 1;
   double zero = 0.0, first = 0.0, second = 0.0;
   double f, x, dx;
+  /*
   for(int i=0;i<points;i++){
-    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    f = (function(i+1,1) + function(i,1))/2.0;
     dx = function(i+1,0) - function(i,0);
     zero += f*dx;
   }
+  */
   for(int i=0;i<points;i++){
     f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     first += f*x*dx;
   }
-  first /= zero;
+  //first /= zero;
   for(int i=0;i<points;i++){
     f = (function(i+1,1) + function(i,1))/2.0;
     x = (function(i+1,0) + function(i,0))/2.0;
     dx = function(i+1,0) - function(i,0);
     second += (x - first)*(x - first)*f*dx;
   }
-  second /= zero;
+  //second /= zero;
+  return second;
+}
+//ABS VERSIONS
+double zeroth_moment_fabs(const arma::mat &function){
+  int points = function.n_rows - 1;
+  double zero = 0.0, f, dx;
+  for(int i=0;i<points;i++){
+    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    zero += f*dx;
+  }
+  return zero;
+}
+double first_moment_fabs(const arma::mat &function){
+  int points = function.n_rows - 1;
+  double zero = 0.0, first = 0.0, f, x, dx;
+  /*
+  for(int i=0;i<points;i++){
+    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    zero += f*dx;
+  }
+  */
+  for(int i=0;i<points;i++){
+    f = (function(i+1,1) + function(i,1))/2.0;
+    x = (function(i+1,0) + function(i,0))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    first += f*x*dx;
+  }
+  //first /= zero;
+  return first;
+}
+double second_moment_fabs(const arma::mat &function){
+  int points = function.n_rows - 1;
+  double zero = 0.0, first = 0.0, second = 0.0;
+  double f, x, dx;
+  /*
+  for(int i=0;i<points;i++){
+    f = fabs(function(i+1,1) + function(i,1))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    zero += f*dx;
+  }
+  */
+  for(int i=0;i<points;i++){
+    f = (function(i+1,1) + function(i,1))/2.0;
+    x = (function(i+1,0) + function(i,0))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    first += f*x*dx;
+  }
+  //first /= zero;
+  for(int i=0;i<points;i++){
+    f = (function(i+1,1) + function(i,1))/2.0;
+    x = (function(i+1,0) + function(i,0))/2.0;
+    dx = function(i+1,0) - function(i,0);
+    second += (x - first)*(x - first)*f*dx;
+  }
+  //second /= zero;
   return second;
 }
 // END: Functions for statistics
@@ -336,6 +424,20 @@ void load_file(int files, int lines, int runs, std::string *&infilename, arma::v
     }
     ifile.close();
   }
+}
+void print_file(std::string outfilename, std::string title, arma::mat matrix){
+  int rows = matrix.n_rows;
+  int cols = matrix.n_cols;
+  std::ofstream ofile;
+  ofile.open(outfilename);
+  ofile << title.c_str() << '\n';
+  for(int i=0;i<rows;i++){
+    for(int j=0;j<cols;j++){
+      ofile << ' ' << matrix(i,j);
+    }
+    ofile << '\n';
+  }
+  ofile.close();
 }
 void print_file(std::string outfilename, arma::mat matrix){
   int rows = matrix.n_rows;
@@ -385,4 +487,35 @@ void obs_matrix_moments(int files, int obs_file, arma::mat *&val_matrix, const a
       obs_matrix(j,i*obs_file+2) = second_moment(function);
     }
   }  
+}
+void obs_matrix_moments_fabs(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix){
+  int i,j,k;
+  int runs = val_matrix[0].n_rows;
+  int lines = delY_vec.n_elem;
+  arma::mat function = arma::zeros<arma::mat>(lines,2);
+  obs_matrix = arma::zeros<arma::mat>(runs,obs_file*files);
+  for(i=0;i<files;i++){
+    for(j=0;j<runs;j++){
+      for(k=0;k<lines;k++){
+	function(k,0) = delY_vec(k);
+	function(k,1) = val_matrix[i](j,k);
+      }
+      obs_matrix(j,i*obs_file) = zeroth_moment_fabs(function);
+      obs_matrix(j,i*obs_file+1) = first_moment_fabs(function);
+      obs_matrix(j,i*obs_file+2) = second_moment_fabs(function);
+    }
+  }  
+}
+//print running fractional total of vector
+void print_fractional_sum(arma::vec vector){
+  int length = vector.n_elem;
+  arma::vec sum = arma::zeros<arma::vec>(length);
+  for(int i=0;i<length;i++){
+    sum(i) = vector(i);
+    sum(i) += sum(abs(i-1));
+  }
+  for(int i=0;i<length;i++){
+    sum(i) /= sum(length-1);
+   }
+  sum.print("+++++ eigval fractional sum +++++");
 }

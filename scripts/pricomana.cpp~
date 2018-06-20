@@ -54,6 +54,23 @@ arma::mat calculate_zmatrix_function(arma::mat val_matrix, arma::vec mean_vec, a
 	}
 	return zval_matrix;
 }
+//calculate zmatrix, with mean zero and scaled by error, i.e. [z = (y-ybar)/ystd]
+arma::mat calculate_zmatrix_function(arma::mat val_matrix, arma::vec mean_vec, arma::vec obs_error){
+	int i, j,
+		reps = val_matrix.n_rows,
+		dims = val_matrix.n_cols;
+	double xi_mean, xi_error;
+	arma::mat zval_matrix = arma::zeros<arma::mat> (reps,dims);
+
+	for(i=0;i<dims;i++){
+		xi_mean = mean_vec(i);
+		xi_error = obs_error(i);
+		for(j=0;j<reps;j++){
+		  zval_matrix(j,i) = (val_matrix(j,i) - xi_mean)/xi_error;
+		}
+	}
+	return zval_matrix;
+}
 //Calculate valmatrix from zmatrix
 arma::mat calculate_valmatrix_function(arma::mat zval_matrix, arma::vec mean_vec, arma::mat cov_matrix){
 	int i, j,
@@ -147,14 +164,13 @@ arma::mat calculate_tmatrix_function(arma::mat val_matrix){
 
 	return tval_matrix;
 }
-//full transformation from val_matrix to tval_matrix, return mean & cov matrices
+//full transformation from val_matrix to tval_matrix USING UNIT VARIANCE, return mean & cov matrices
 arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec& eigval_vec, arma::mat& eigvec_matrix, arma::mat& mean_vec, arma::mat& cov_matrix){
 	int reps = val_matrix.n_rows,
 		dims = val_matrix.n_cols;
 
 	arma::mat	zval_matrix = arma::zeros<arma::mat>(reps,dims),
 				tval_matrix = zval_matrix,
-
 				zcov_matrix = cov_matrix,
 	  eigsort_matrix = cov_matrix;
 
@@ -165,6 +181,35 @@ arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec& eigval_vec
 	mean_vec = calculate_mean_function(val_matrix);
 	cov_matrix = calculate_covariance_function(val_matrix, mean_vec);
 	zval_matrix = calculate_zmatrix_function(val_matrix, mean_vec, cov_matrix);
+	zcov_matrix = calculate_zcovariance_function(zval_matrix);
+
+	//find eigenvalues and eigenvectors for zcov matrix
+	arma::eig_sym(eigval_vec, eigvec_matrix, zcov_matrix);
+
+	//sort eigenvalues in descending order
+	eigvec_matrix = sort_eigenvectors_function(eigval_vec, eigvec_matrix);
+
+	//calculate rotated system
+	tval_matrix = zval_matrix*eigvec_matrix;
+
+	return tval_matrix;
+}
+//full transformation from val_matrix to tval_matrix USING ERROR, return mean
+arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec obs_error, arma::vec& eigval_vec, arma::mat& eigvec_matrix, arma::mat& mean_vec, arma::mat& zcov_matrix){
+	int reps = val_matrix.n_rows,
+		dims = val_matrix.n_cols;
+
+	arma::mat	zval_matrix = arma::zeros<arma::mat>(reps,dims),
+				tval_matrix = zval_matrix,
+	  eigsort_matrix = zcov_matrix;
+
+	zcov_matrix = arma::zeros<arma::mat>(dims,dims);
+	eigvec_matrix = arma::zeros<arma::mat>(dims,dims);
+	mean_vec = arma::zeros<arma::vec>(dims);
+
+	mean_vec = calculate_mean_function(val_matrix);
+	mean_vec.print("mean_vec");
+	zval_matrix = calculate_zmatrix_function(val_matrix, mean_vec, obs_error);
 	zcov_matrix = calculate_zcovariance_function(zval_matrix);
 
 	//find eigenvalues and eigenvectors for zcov matrix

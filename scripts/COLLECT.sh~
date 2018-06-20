@@ -10,14 +10,18 @@ EXEC_FILE='collect.x'
 PARAM_FILE='script_parameters.dat'
 NAMES_FILE='script_names.dat'
 
-FOLDER=''
+SOURCE_FOLDER=''
+DEST_FOLDER=''
 LINES=0
 RUNS=0
 FILES=0
 while read NAME VALUE; do
-   if [ ${NAME} == 'FOLDER' ]
+   if [ ${NAME} == 'SOURCE_FOLDER' ]
    then
-	FOLDER=${VALUE}
+	SOURCE_FOLDER=${VALUE}
+   elif [ ${NAME} == 'DEST_FOLDER' ]
+   then
+       DEST_FOLDER=${VALUE}
    elif [ ${NAME} == 'LINES' ]
    then
        LINES=${VALUE}

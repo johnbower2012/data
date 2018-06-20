@@ -4,8 +4,11 @@
 #include<fstream>
 #include "armadillo"
 
+void print_file(std::string outfilename, arma::mat matrix);
+
 int main(int argc, char* argv[]){
   std::string filename;
+  std::string printname = "moments_parameters.dat";
   int lines,lhp_samples;
   if(argc!=4){
     std::cout << "Usage: Enter also 'fn lines lhp_s' the same line.\n";
@@ -53,6 +56,7 @@ int main(int argc, char* argv[]){
     hyperlist = init + dx*hyperlist;
     hypercube.col(i) = hyperlist;
   }
+  print_file(printname,hypercube);
 
   /*Construct the parameter files for each sampling 
    */
@@ -68,4 +72,19 @@ int main(int argc, char* argv[]){
   }
   
   return 0;
+}
+
+
+void print_file(std::string outfilename, arma::mat matrix){
+  int rows = matrix.n_rows;
+  int cols = matrix.n_cols;
+  std::ofstream ofile;
+  ofile.open(outfilename);
+  for(int i=0;i<rows;i++){
+    for(int j=0;j<cols;j++){
+      ofile << ' ' << matrix(i,j);
+    }
+    ofile << '\n';
+  }
+  ofile.close();
 }

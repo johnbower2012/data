@@ -1,5 +1,6 @@
-#FOLDER data/exp_data/
-FOLDER ../model_output/
+#SOURCE_FOLDER data/exp_data/
+SOURCE_FOLDER ../model_output/
+DEST_FOLDER /calculations/
 RUNS 1000
-LINES 40
+LINES 16
 FILES 4

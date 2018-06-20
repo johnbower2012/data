@@ -24,6 +24,8 @@ arma::mat calculate_zcovariance_function(arma::mat zval_matrix);
 ******************************************/
 //calculate zmatrix, with mean zero and unit std, i.e. [z = (y-ybar)/ystd]
 arma::mat calculate_zmatrix_function(arma::mat val_matrix, arma::vec mean_vec, arma::mat cov_matrix);
+//calculate zmatrix, with mean zero and scaled by error, i.e. [z = (y-ybar)/ystd]
+arma::mat calculate_zmatrix_function(arma::mat val_matrix, arma::vec mean_vec, arma::vec obs_error);
 //Calculate valmatrix from zmatrix
 arma::mat calculate_valmatrix_function(arma::mat zval_matrix, arma::vec mean_vec, arma::mat cov_matrix);
 
@@ -33,6 +35,8 @@ arma::mat calculate_valmatrix_function(arma::mat zval_matrix, arma::vec mean_vec
 arma::mat calculate_tmatrix_function(arma::mat val_matrix);
 //full transformation from val_matrix to tval_matrix, return mean & cov matrices
 arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec& eigval_vec, arma::mat& eigvec_matrix, arma::mat& mean_vec, arma::mat& cov_matrix);
+//full transofmration from zval_matrix to tval_matrix USING ERROR, return mean and zcov matrices
+arma::mat calculate_tmatrix_function(arma::mat val_matrix, arma::vec obs_error, arma::vec& eigval_vec, arma::mat& eigvec_matrix, arma::mat& mean_vec, arma::mat& zcov_mat);
 //Transformation from zval_matrix to tval_matrix
 arma::mat calculate_ztotmatrix_function(arma::mat zval_matrix);
 //full transformation from tval_matrix to val_matrix

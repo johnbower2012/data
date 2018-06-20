@@ -6,7 +6,7 @@
 
 #!/bin/bash
 
-EXEC_FILE='collect.x'
+COLLECT_FILE='parameters.dat'
 PARAM_FILE='script_parameters.dat'
 NAMES_FILE='script_names.dat'
 
@@ -21,7 +21,7 @@ while read NAME VALUE; do
 	SOURCE_FOLDER=${VALUE}
    elif [ ${NAME} == 'DEST_FOLDER' ]
    then
-       DEST_FOLDER=${VALUE}
+	DEST_FOLDER=${VALUE}
    elif [ ${NAME} == 'LINES' ]
    then
        LINES=${VALUE}
@@ -36,18 +36,20 @@ while read NAME VALUE; do
    fi
 done < <(egrep -v '^(#|$)' $PARAM_FILE)
 
-while read NAME; do
-   for((j=0;j<$RUNS;j++))
-   do
-       if [ ! -d $NAME ]
-       then
-	   mkdir -v $NAME
-       fi
-       RUN=` printf "${FOLDER}run%04d/${NAME}" $j `
-       NEWFILE=` printf "${NAME}/run%04d" $j `   
-       egrep -v "^(#|$)" $RUN > $NEWFILE
-   done
-   DEST="$FOLDER$NAME"
-   ./collect.x $RUNS $NAME $DEST
-   rm -r $NAME
-done < <(cat $NAMES_FILE)
+NEWFILE=` printf "${DEST_FOLDER}${COLLECT_FILE}" `
+if [ ! -d $DEST_FOLDER ]
+then
+    mkdir -v $DEST_FOLDER
+fi
+if [ -f $NEWFILE ]
+then
+    rm $NEWFILE
+fi
+touch $NEWFILE
+echo $NEWFILE
+for((j=0;j<$RUNS;j++))
+do
+    RUN=` printf "${SOURCE_FOLDER}run%04d/${COLLECT_FILE}" $j `
+    egrep -v "^(#|$)" $RUN | tr -s ' ' | cut -d ' ' -f 2 | tr '\n' ' ' >> $NEWFILE
+    printf "\n" >> $NEWFILE
+done
