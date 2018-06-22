@@ -24,6 +24,8 @@ void obs_matrix_moments_fabs(int files, int obs_file, arma::mat *&val_matrix, co
 
 arma::vec average_columns(arma::mat input);
 void load_file(int files, int lines, int runs, std::string *&infilename, arma::vec &delY_vec, arma::mat *&val_matrix);
+void print_file(std::string outfilename, std::string title, arma::vec vector);
+void print_file(std::string outfilename, arma::vec vector);
 void print_file(std::string outfilename, std::string title, arma::mat matrix);
 void print_file(std::string outfilename, arma::mat matrix);
 void print_fractional_sum(arma::vec vector);
@@ -102,7 +104,7 @@ int main(int argc, char* argv[]){
   avg_mom.print("avg_mom");
   obs_error = 0.1*avg_mom;
   obs_error.print("obs");
-
+  
 
 
   /*********
@@ -137,6 +139,10 @@ int main(int argc, char* argv[]){
   printname = "moments_model_data.dat";
   title = "#pipi ppbar pK KK\n#m0 m1 m2";
   print_file(printname,title,obs_matrix);
+
+  printname = "moments_errors.dat";
+  title="#pipi/ppbar/pK/KK";
+  print_file(printname,title,obs_error);
 
   printname = "moments_model_eigvec.dat";
   title = "#colvec\n#pipi ppbar pK KK\n#m0 m1 m2";
@@ -461,6 +467,25 @@ void load_file(int files, int lines, int runs, std::string *&infilename, arma::v
     }
     ifile.close();
   }
+}
+void print_file(std::string outfilename, std::string title, arma::vec vector){
+  int elem = vector.n_elem;
+  std::ofstream ofile;
+  ofile.open(outfilename);
+  ofile << title.c_str() << '\n';
+  for(int i=0;i<elem;i++){
+    ofile << ' ' << vector(i) << '\n';
+  }
+  ofile.close();
+}
+void print_file(std::string outfilename, arma::vec vector){
+  int elem = vector.n_elem;
+  std::ofstream ofile;
+  ofile.open(outfilename);
+  for(int i=0;i<elem;i++){
+    ofile << ' ' << vector(i) << '\n';
+  }
+  ofile.close();
 }
 void print_file(std::string outfilename, std::string title, arma::mat matrix){
   int rows = matrix.n_rows;
