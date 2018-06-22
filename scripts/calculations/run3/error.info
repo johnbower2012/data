@@ -1,0 +1,20 @@
+  //pipi
+  int part=0;
+  obs_error(part*obs_file) = 0.01;
+  obs_error(1+part*obs_file) = 0.01;
+  obs_error(2+part*obs_file) = 0.005;
+  //ppbar
+  part=1;
+  obs_error(part*obs_file) = 0.005;
+  obs_error(1+part*obs_file) = 0.005;
+  obs_error(2+part*obs_file) = 0.001;
+  //pK
+  part=2;
+  obs_error(part*obs_file) = 0.001;
+  obs_error(1+part*obs_file) = 0.001;
+  obs_error(2+part*obs_file) = 0.0005;
+  //KK
+  part=3;
+  obs_error(part*obs_file) = 0.005;
+  obs_error(1+part*obs_file) = 0.005;
+  obs_error(2+part*obs_file) = 0.001;

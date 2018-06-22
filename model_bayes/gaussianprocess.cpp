@@ -381,6 +381,8 @@ arma::mat gaussian_process_solver_basic(arma::mat kernel_func(arma::mat, arma::m
 
 	arma::vec	param_x_vec = arma::zeros<arma::vec> (param);
 
+
+	
 	//calculate kernel matrices
 	kernel_mat = kernel_func(X_mat, X_mat, hyperp_vec);
 	kernel_s_mat = kernel_func(X_mat, X_s_mat, hyperp_vec);
@@ -493,15 +495,15 @@ void write_output(arma::mat output_mat, int test, int param, int observables, in
 	ofile.open(outfilename);
 	for(i=0;i<test;i++){
 		for(j=0;j<param;j++){
-			ofile << std::setw(15) << output_mat(i,j);
+			ofile << " " << output_mat(i,j);
 		}
 		for(j=0;j<observables;j++){
-			ofile << std::setw(15) << output_mat(i,j*2+param);
-			ofile << std::setw(15) << output_mat(i,j*2+param) - 2.0*sqrt(output_mat(i,j*2+1+param));
-			ofile << std::setw(15) << output_mat(i,j*2+param) + 2.0*sqrt(output_mat(i,j*2+1+param));
+			ofile << " " << output_mat(i,j*2+param);
+			ofile << " " << output_mat(i,j*2+param) - 2.0*sqrt(output_mat(i,j*2+1+param));
+			ofile << " " << output_mat(i,j*2+param) + 2.0*sqrt(output_mat(i,j*2+1+param));
 		}
 		for(j=0;j<samples;j++){
-			ofile << std::setw(15) << output_mat(i,j+param+2*observables);
+			ofile << " " << output_mat(i,j+param+2*observables);
 		}
 		ofile << std::endl;
 	}
@@ -519,10 +521,10 @@ void write_trainset(arma::mat X_mat, arma::mat Y_mat, std::string outfilename){
 	ofile.open(outfilename);
 	for(i=0;i<train;i++){
 		for(j=0;j<param;j++){
-			ofile << std::setw(15) << X_mat(i,j);
+			ofile << " " << X_mat(i,j);
 		}
 		for(j=0;j<observables;j++){
-		  ofile << std::setw(15) << Y_mat(i,j);
+		  ofile << " " << Y_mat(i,j);
 		}
 		ofile << std::endl;
 	}

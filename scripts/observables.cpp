@@ -22,6 +22,7 @@ void obs_matrix_median_widths(int files, int obs_file, arma::mat *&val_matrix, c
 void obs_matrix_moments(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
 void obs_matrix_moments_fabs(int files, int obs_file, arma::mat *&val_matrix, const arma::vec &delY_vec, arma::mat &obs_matrix);
 
+arma::vec average_columns(arma::mat input);
 void load_file(int files, int lines, int runs, std::string *&infilename, arma::vec &delY_vec, arma::mat *&val_matrix);
 void print_file(std::string outfilename, std::string title, arma::mat matrix);
 void print_file(std::string outfilename, arma::mat matrix);
@@ -70,13 +71,39 @@ int main(int argc, char* argv[]){
   obs_matrix = arma::zeros<arma::mat>(runs,observables);
   delY_vec = arma::zeros<arma::vec>(lines);
   obs_error = arma::zeros<arma::vec>(observables);
-  for(i=0;i<files;i++){
-    obs_error(i*obs_file) = 0.01;
-    obs_error(1+i*obs_file) = 0.01;
-    obs_error(2+i*obs_file) = 0.005;
-  }
+  //all observables that aren't pipi, reduce unc by factor of ten.
+
+  //pipi
+  int part=0;
+  obs_error(part*obs_file) = 0.01;
+  obs_error(1+part*obs_file) = 0.01;
+  obs_error(2+part*obs_file) = 0.005;
+  //ppbar
+  part=1;
+  obs_error(part*obs_file) = 0.005;
+  obs_error(1+part*obs_file) = 0.005;
+  obs_error(2+part*obs_file) = 0.001;
+  //pK
+  part=2;
+  obs_error(part*obs_file) = 0.001;
+  obs_error(1+part*obs_file) = 0.001;
+  obs_error(2+part*obs_file) = 0.0005;
+  //KK
+  part=3;
+  obs_error(part*obs_file) = 0.005;
+  obs_error(1+part*obs_file) = 0.005;
+  obs_error(2+part*obs_file) = 0.001;
+
+
   load_file(files, lines, runs, infilename, delY_vec, val_matrix);
   obs_matrix_moments_fabs(files,obs_file,val_matrix,delY_vec,obs_matrix);
+
+  arma::vec avg_mom = average_columns(obs_matrix);
+  avg_mom.print("avg_mom");
+  obs_error = 0.1*avg_mom;
+  obs_error.print("obs");
+
+
 
   /*********
 	     CONDUCT PCA
@@ -123,8 +150,6 @@ int main(int argc, char* argv[]){
   printname = "moments_model_z.dat";
   title = "#moments_matrix*eigenvectors_matrix";
   print_file(printname,title,print_matrix);
-
-  
 
   delete[] val_matrix;
   delete[] infilename;
@@ -401,6 +426,18 @@ double second_moment_fabs(const arma::mat &function){
   return second;
 }
 // END: Functions for statistics
+arma::vec average_columns(arma::mat input){
+  int rows = input.n_rows;
+  int columns = input.n_cols;
+  arma::vec avg = arma::zeros<arma::vec>(columns);
+  for(int i=0;i<columns;i++){
+    for(int j=0;j<rows;j++){
+      avg(i) += input(j,i);
+    }
+    avg(i) /= (double) rows;
+  }
+  return avg;
+}
 void load_file(int files, int lines, int runs, std::string *&infilename, arma::vec &delY_vec, arma::mat *&val_matrix){
   std::ifstream ifile;
   if(val_matrix!=nullptr){
