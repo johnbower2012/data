@@ -565,7 +565,7 @@ void obs_matrix_moments_fabs(int files, int obs_file, arma::mat *&val_matrix, co
       obs_matrix(j,i*obs_file) = zeroth_moment_fabs(function);
       obs_matrix(j,i*obs_file+1) = first_moment_fabs(function);
       obs_matrix(j,i*obs_file+2) = second_moment_fabs(function);
-p    }
+    }
   }  
 }
 //print running fractional total of vector

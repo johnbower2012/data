@@ -1,0 +1,12 @@
+#SIGMA_QGP 0.3
+#SIGMA_HAD_RATIO 0
+#SOVERUD 0.0
+#QUARK_ENTROPY_RATIO 0.05
+BW_T 100
+BW_UPERP 0.75
+BW_LAMBDA_VISC 0.8
+BARYON_FUDGE 0.75
+InvCoshPar_uu_width 0.1 1.5
+InvCoshPar_ud_width 0.1 1.5
+InvCoshPar_us_width 0.1 1.5
+InvCoshPar_ss_width 0.1 1.5
