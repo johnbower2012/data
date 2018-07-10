@@ -25,6 +25,7 @@ arma::mat linear_regression_ls(arma::mat Y, arma::mat X){
   arma::mat X_ = arma::zeros<arma::mat>(points,2);
   arma::vec y = arma::zeros<arma::vec>(points);
 
+  /*
   for(int i=0;i<parameters;i++){
     for(int j=0;j<points;j++){
       X_(j,0) = 1.0;
@@ -38,6 +39,21 @@ arma::mat linear_regression_ls(arma::mat Y, arma::mat X){
       Beta.row(i*observables+j) = beta.t();
     }
   }
+  */
+  for(int i=0;i<observables;i++){
+    y = Y.col(i);
+    for(int j=0;j<parameters;j++){
+      for(int k=0;k<points;k++){
+	X_(k,0) = 1.0;
+	X_(k,1) = X(k,j+1);
+      }
+      temp = X_.t()*X_;
+      temp = temp.i();
+      beta = temp*X_.t()*y;
+      Beta.row(i*parameters+j) = beta.t();
+    }
+  }
+
   return Beta;
 }
 
@@ -68,8 +84,10 @@ int main(int argc, char* argv[]){
 
   X.resize(points,2);
   beta = linear_regression_ls(y,X);
+  beta.print("beta");
   
   ofile.open("beta.dat");
+  ofile << "#parameters(1,2,3...)observables(1,2,3...)" << std::endl;
   for(int i=0;i<dimensions*observables;i++){
     for(int j=0;j<2;j++){
       ofile << " " << Beta(i,j);

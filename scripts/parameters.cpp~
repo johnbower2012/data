@@ -35,7 +35,6 @@ int main(int argc, char* argv[]){
     We end with a lines by lhp_s matrix. Then construct full numerical lhp sampling 
     using the input from file and the previous generic sampling matrix
   */
-
   arma::mat hypercube = arma::zeros<arma::mat>(lhp_samples,lines);
   hypercube = construct_latinhypercube_sampling(lhp_samples,File);
   print_file(printname,hypercube);

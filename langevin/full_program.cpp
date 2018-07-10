@@ -50,9 +50,6 @@ public:
   void statistics_run();
 };
 
-
-
-
 /******************** 
   CLASS FUNCTIONS
  ********************/
