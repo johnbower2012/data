@@ -64,25 +64,26 @@ int main(int argc, char* argv[]){
   double sigma_n, sigma_f, l;
 
   //For writing to file
-  std::string param_filename, obs_filename, outfilename, trainfilename;
+  std::string param_filename, beta_filename, outfilename, trainfilename;
 
   //Test to ensure the proper input. Terminate program if command line inputs are not given
-  if(argc!=5){
+  if(argc!=6){
     std::cout << "Improper usage. Please also enter 'filename sigma_f l sigma_n' on same line." << std::endl;
     exit(1);
   }
   else{
     param_filename = argv[1];
-    sigma_f = atof(argv[2]);
-    l = atof(argv[3]);
-    sigma_n = atof(argv[4]);
+    beta_filename = argv[2];
+    sigma_f = atof(argv[3]);
+    l = atof(argv[4]);
+    sigma_n = atof(argv[5]);
   }
   
   /*SYSTEM and OUTPUT--
 ***********************************************************/
   
   train = 1000;
-  test = 719;
+  test = 23;
   
   samples = 1;
   param = 4;
@@ -125,9 +126,8 @@ int main(int argc, char* argv[]){
   hyperp_vec(2) = sigma_n;
 
   load_data_file(param_filename,xvec_train_mat,yvec_train_mat);
-  std::string betaName = "beta.dat";
-  arma::mat beta = arma::zeros<arma::mat>(param*observables,2);
-  load_beta_file(betaName,beta);
+  arma::mat beta = arma::zeros<arma::mat>(observables,1+param);
+  load_beta_file(beta_filename,beta);
 
   observables=1;
   yvec_train_mat.resize(train,1);
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]){
 arma::mat construct_latinhypercube_sampling(int samples, arma::mat range){
   int parameters = range.n_rows;
   arma::mat hypercube = arma::zeros<arma::mat>(samples,parameters);
-p  arma::vec hyperlist = arma::linspace<arma::vec>(0,samples-1,samples);
+  arma::vec hyperlist = arma::linspace<arma::vec>(0,samples-1,samples);
   for(int i=0;i<parameters;i++){
     hyperlist=shuffle(hyperlist);
     hypercube.col(i) = hyperlist;
@@ -200,3 +200,8 @@ p  arma::vec hyperlist = arma::linspace<arma::vec>(0,samples-1,samples);
   }
   return hypercube;
 }
+
+
+
+
+

@@ -8,6 +8,50 @@
 std::ofstream ofile;
 std::ifstream ifile;
 
+arma::vec linear_regression_ls(arma::vec y, arma::mat X);
+arma::mat linear_regression_ls(arma::mat Y, arma::mat X);
+
+int main(int argc, char* argv[]){
+  int points=1000,dimensions=4,observables=12;
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator(seed);
+  std::uniform_real_distribution<double> distribution(-0.5,0.5);
+  arma::mat X = arma::zeros<arma::mat>(points,dimensions+1);
+  arma::mat Y = arma::zeros<arma::mat>(points,observables);
+  arma::vec y = arma::zeros<arma::vec>(points);
+  arma::vec result = arma::zeros<arma::vec>(points);
+  arma::vec beta = arma::zeros<arma::vec>(points);
+
+  ifile.open("plot.dat");
+  for(int i=0;i<points;i++){
+    X(i,0) = 1.0;
+    for(int j=0;j<dimensions;j++){
+      ifile >> X(i,1+j);
+    }
+    for(int j=0;j<observables;j++){
+      ifile >> Y(i,j);
+    }
+    y(i) = Y(i,0);
+  }
+
+  arma::mat Beta = linear_regression_ls(Y,X);
+
+  beta = linear_regression_ls(y,X);
+  beta.print("beta");
+  
+  ofile.open("beta.dat");
+  ofile << "#parameters(1,2,3...)observables(1,2,3...)" << std::endl;
+  for(int i=0;i<dimensions*observables;i++){
+    for(int j=0;j<2;j++){
+      ofile << " " << Beta(i,j);
+    }
+    ofile << std::endl;
+  }
+  ofile.close();
+
+  return 0;
+}
+
 arma::vec linear_regression_ls(arma::vec y, arma::mat X){
   int points = y.n_elem;
   arma::mat temp = X.t()*X;
@@ -55,45 +99,4 @@ arma::mat linear_regression_ls(arma::mat Y, arma::mat X){
   }
 
   return Beta;
-}
-
-int main(int argc, char* argv[]){
-  int points=1000,dimensions=4,observables=12;
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-  std::default_random_engine generator(seed);
-  std::uniform_real_distribution<double> distribution(-0.5,0.5);
-  arma::mat X = arma::zeros<arma::mat>(points,dimensions+1);
-  arma::mat Y = arma::zeros<arma::mat>(points,observables);
-  arma::vec y = arma::zeros<arma::vec>(points);
-  arma::vec result = arma::zeros<arma::vec>(points);
-  arma::vec beta = arma::zeros<arma::vec>(points);
-
-  ifile.open("plot.dat");
-  for(int i=0;i<points;i++){
-    X(i,0) = 1.0;
-    for(int j=0;j<dimensions;j++){
-      ifile >> X(i,1+j);
-    }
-    for(int j=0;j<observables;j++){
-      ifile >> Y(i,j);
-    }
-    y(i) = Y(i,0);
-  }
-
-  arma::mat Beta = linear_regression_ls(Y,X);
-
-  beta = linear_regression_ls(y,X);
-  beta.print("beta");
-  
-  ofile.open("beta.dat");
-  ofile << "#parameters(1,2,3...)observables(1,2,3...)" << std::endl;
-  for(int i=0;i<dimensions*observables;i++){
-    for(int j=0;j<2;j++){
-      ofile << " " << Beta(i,j);
-    }
-    ofile << std::endl;
-  }
-  ofile.close();
-
-  return 0;
 }

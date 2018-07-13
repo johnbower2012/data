@@ -24,12 +24,13 @@ arma::mat kernel_derivative_function(arma::mat kernal_func(arma::mat, arma::mat,
 arma::mat gaussian_process_solver_regression(
 	arma::mat kernal_func(arma::mat, arma::mat, arma::vec), arma::mat X_mat, arma::mat Y_mat, arma::mat X_s_mat, 
 	int samples, arma::vec hyperp_vec, double epsilon, 
-	arma::mat regression_func(arma::mat, arma::vec), int power);
+	arma::mat regression_func(arma::mat, arma::mat), arma::mat beta);
 arma::mat gaussian_process_solver_basic(arma::mat X_mat, arma::mat Y_mat, arma::mat X_s_mat, int samples, arma::vec hyperp_vec, double epsilon);
 
 /**REGRESSION FUNCTIONS
 **********************************************/
 arma::mat regression_polynomial_function(arma::mat X_mat, arma::vec parameters);
+arma::mat regression_linear_function(arma::mat X_mat, arma::mat beta);
 
 /**WRITE TO FILE FUNCTIONS
 **********************************************/
