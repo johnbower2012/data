@@ -1,8 +1,8 @@
 #!/bin/bash
 
 EXEC_FILE='observables.x'
-PARAM_FILE='../script_parameters.dat'
-NAMES_FILE='../script_model_names.dat'
+PARAM_FILE='script_model_parameters.dat'
+NAMES_FILE='script_model_names.dat'
 
 SOURCE_FOLDER=''
 DEST_FOLDER=''

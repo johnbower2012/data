@@ -1,0 +1,5 @@
+SOURCE_FOLDER data/exp_data/
+DEST_FOLDER calculations/
+RUNS 1
+LINES 16
+FILES 4

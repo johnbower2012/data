@@ -328,6 +328,18 @@ void load_beta_file(std::string betaName, arma::mat &beta){
   }
   ifile.close();
 }
+void load_file(std::string fileName, arma::mat &file){
+  int load = file.n_rows;
+  int param = file.n_cols;
+  std::ifstream ifile;
+  ifile.open(fileName);
+  for(int i=0;i<load;i++){
+    for(int j=0;j<param;j++){
+      ifile >> file(i,j);
+    }
+  }
+  ifile.close();
+}
 void write_file(std::string fileName, arma::mat &file){
   int write = file.n_rows;
   int param = file.n_cols;

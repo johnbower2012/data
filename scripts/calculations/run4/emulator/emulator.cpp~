@@ -1,0 +1,52 @@
+#include<iostream>
+#include<iomanip>
+#include<cmath>
+#include "emulator_class.cpp"
+#include<armadillo>
+
+int main(int argc, char* argv[]){
+  int train = 1000;
+  int test = 719;
+  int param = 4;
+  int observables=12;
+  int hp = 3;
+  double epsilon=1e-8;
+
+  std::string fileName, betaName;
+
+  arma::mat X = arma::zeros<arma::mat>(train,param);
+  arma::mat X_s = arma::zeros<arma::mat>(test,param);
+  arma::mat range = arma::zeros<arma::mat>(param,2);
+  arma::vec h = arma::zeros<arma::vec>(hp);
+  arma::mat beta = arma::zeros<arma::mat>(observables,param+1);
+  arma::mat Y = arma::zeros<arma::mat>(train,observables);
+  arma::mat y = arma::zeros<arma::mat>(train,1);
+
+  if(argc<6){
+    printf("Improper usage. Please enter 'fileName betaName sigma_f l sigma_n' on same line.\n");
+    exit(1);
+  } else{
+    fileName = argv[1];
+    betaName = argv[2];
+    h(0) = atof(argv[3]);
+    h(1) = atof(argv[4]);
+    h(2) = atof(argv[5]);
+  }
+
+  load_data_file(fileName,X,Y);
+  load_beta_file(betaName,beta);
+  y = Y.col(0);
+
+  for(int i=0;i<param;i++){
+    range(i,0) = 0.01;
+    range(i,1) = 5.0;
+  }
+  X_s = construct_latinhypercube_sampling(test,range);
+
+  emulator gauss(X,h,beta,epsilon);
+  arma::mat output = gauss.emulate(X_s,y);
+
+  write_output(output,"test.dat");
+  write_trainset(X, y, "train.dat");
+  return 0;
+}
