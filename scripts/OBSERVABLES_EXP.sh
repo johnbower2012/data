@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXEC_FILE='observables.x'
+EXEC_FILE='observables_exp.x'
 PARAM_FILE='script_exp_parameters.dat'
 NAMES_FILE='script_exp_names.dat'
 

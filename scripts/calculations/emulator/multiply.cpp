@@ -1,0 +1,69 @@
+#include<iostream>
+#include<iomanip>
+#include<fstream>
+#include<string>
+#include<armadillo>
+#include "observables_class.cpp"
+
+void load_file(std::string fileName, arma::mat &file){
+  int load = file.n_rows;
+  int param = file.n_cols;
+  std::ifstream ifile;
+  ifile.open(fileName);
+  for(int i=0;i<load;i++){
+    for(int j=0;j<param;j++){
+      ifile >> file(i,j);
+    }
+  }
+  ifile.close();
+}
+void write_file(std::string fileName, arma::mat &file){
+  int write = file.n_rows;
+  int param = file.n_cols;
+  std::string temp;
+  std::ofstream ofile;
+  ofile.open(fileName);
+  for(int i=0;i<write;i++){
+    for(int j=0;j<param;j++){
+      ofile << " " <<  file(i,j);
+    }
+    ofile << std::endl;
+  }
+  ofile.close();
+}
+
+int main(int argc, char* argv[]){
+  std::string expname, eigvecname, errorname, meanname, outfile;
+  if(argc<4){
+    printf("Improper usage. Please enter also 'expname eigvecname errorname meanname outfilename' on same line.\n");
+    exit(1);
+  } else{
+    expname = argv[1];
+    eigvecname = argv[2];
+    errorname = argv[3];
+    meanname = argv[4];
+    outfile = argv[5];
+  }
+
+  int exp_lines=1;
+  int observables=12;
+  int runs=1000;
+  
+  arma::mat exp = arma::zeros<arma::mat>(exp_lines,observables);
+  arma::mat y_tilde = exp;
+  arma::mat eigvecs = arma::zeros<arma::mat>(observables,observables);
+  arma::mat error = arma::zeros<arma::mat>(observables,1);
+  arma::mat mean = error;
+  load_file(expname, exp);
+  load_file(eigvecname, eigvecs);
+  load_file(errorname, error);
+  load_file(meanname, mean);
+  arma::vec error_vec = error.col(0);
+  arma::vec mean_vec = mean.col(0);
+  tilde_function_input(exp,error_vec,mean_vec,y_tilde);
+  arma::mat result = y_tilde*eigvecs;
+  write_file("moments_exp_data_tilde.dat",y_tilde);
+  write_file(outfile, result);
+
+  return 0;
+}

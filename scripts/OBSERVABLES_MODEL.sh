@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXEC_FILE='observables.x'
+EXEC_FILE='observables_model.x'
 PARAM_FILE='script_model_parameters.dat'
 NAMES_FILE='script_model_names.dat'
 

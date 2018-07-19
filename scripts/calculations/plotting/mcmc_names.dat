@@ -1,0 +1,4 @@
+UNIFORM InvCoshPar_uu_width 0.1 1.5	$uu$
+UNIFORM InvCoshPar_ud_width 0.1 1.5	$ud$
+UNIFORM InvCoshPar_us_width 0.1 1.5	$us$
+UNIFORM InvCoshPar_ss_width 0.1 1.5	$ss$

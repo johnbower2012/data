@@ -1,0 +1,6 @@
+echo 'egrep -v "^(#|$)" moments_model_z.dat > moments_model_z_cut.dat'
+echo 'egrep -v "^(#|$)" moments_model_data.dat > moments_model_data_cut.dat'
+echo 'egrep -v "^(#|$)" moments_model_data_tilde.dat > moments_model_data_tilde_cut.dat'
+echo 'paste moments_parameters.dat moments_model_z_cut.dat > plot.dat'
+echo 'paste moments_parameters.dat moments_model_data_cut.dat > plot_data.dat'
+echo 'paste moments_parameters.dat moments_model_data_tilde_cut.dat > plot_data_tilde.dat'
