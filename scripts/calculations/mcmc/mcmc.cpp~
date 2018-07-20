@@ -9,9 +9,9 @@
 
 class MCMC{
 public:
-  double target_value;
+  int observable_count;
+  arma::vec target_value;
   int parameter_count;
-  double sigma;
   arma::mat range;
 
   arma::vec position;
@@ -22,8 +22,8 @@ public:
   std::default_random_engine generator;
 
   MCMC();
-  void set_target_value(double target_value_new);
-  void set_sigma(double new_sigma);
+
+  void set_target_value(arma::vec new_target_value);
   void set_parameter_count(int new_parameter_count);
   void set_range(arma::mat new_range);
   void set_position(arma::vec new_position);
@@ -36,8 +36,8 @@ public:
 
   void step();
   double get_likelihood();
-  double get_likelihood(double z);
-  bool decide(double z);
+  double get_likelihood(arma::vec z);
+  bool decide(arma::vec z);
 };
 
 int main(int argc, char* argv[]){
@@ -85,12 +85,15 @@ int main(int argc, char* argv[]){
   arma::vec widths = arma::zeros<arma::vec>(parameters);
   /*
  0.434935 0.244344 1.16086 1.35566	 -6.21414 -3.81209 -1.6231 -0.054703 0.688187 0.357727 0.0632856 -0.151656 0.0272752 0.0182657 0.018755 -0.000451828
+ 1.102 1.06977 1.46777 0.887588	 3.83952 -0.187607 0.637832 0.540112 -0.257228 0.366589 0.366935 0.144899 0.0324944 0.0108913 0.000779902 -0.00335556
+ 0.115415 0.286386 0.84975 0.988488	 -14.3713 -0.442073 2.40905 2.12669 -0.67151 -0.00544216 0.128274 0.0090414 0.0116861 0.016325 -0.00722896 -0.00787271
   */
 
-  position(0) = 0.434935;
-  position(1) = 0.244344;
-  position(2) = 1.16086;
-  position(3) = 1.35566;
+  position(0) = 0.115415;
+  position(1) = 0.286386;
+  position(2) = 0.84975;
+  position(3) = 0.988488;
+
   for(int i=0;i<parameters;i++){
     //position(i) = fabs(dist(generator));
     widths(i) = (1.5-0.1)/25.0;
@@ -130,11 +133,11 @@ int main(int argc, char* argv[]){
       j++;
     }
     if(i%pts==0){
-      printf("%d % completed...\n",k*10);
+      printf("%d%% completed...\n",k*10);
       k++;
     }
   }
-  printf("100% completed...\n");
+  printf("100%% completed...\n");
   printf("fraction: %f\n",fraction/mcmc_runs);
   int trace_final_count = 0.8*trace.n_rows;
   arma::mat trace_final = arma::zeros<arma::mat>(trace_final_count,parameters);
@@ -152,15 +155,17 @@ MCMC::MCMC(){
   this->sigma = 1.0;
   set_seed(1);
 }
-void MCMC::set_target_value(double new_target_value){
-  this->target_value = new_target_value;
+void MCMC::set_observable_count(int new_observable_count){
+  this->observable_count = new_observable_count;
+  this->target_value = arma::zeros<arma::vec>(this->observable_count);
 }
-void MCMC::set_sigma(double new_sigma){
-  this->sigma = new_sigma;
+void MCMC::set_target_value(arma::vec new_target_value){
+  this->target_value = new_target_value;
 }
 void MCMC::set_parameter_count(int new_parameter_count){
   this->parameter_count = new_parameter_count;
   this->range = arma::zeros<arma::mat>(this->parameter_count,2);
+
   this->position = arma::zeros<arma::vec>(this->parameter_count);
   this->widths = arma::zeros<arma::vec>(this->parameter_count);
   this->test_position = arma::zeros<arma::vec>(this->parameter_count);
@@ -195,17 +200,13 @@ double MCMC::uniform(){
 
 /*STEP--
 **************/
-double MCMC::get_likelihood(){
-  double z1 = 0.0, z2 = 0.0;
-  for(int i=0;i<parameter_count;i++){
-    z1 += position(i)*position(i);
-    z2 += test_position(i)*test_position(i);
+double MCMC::get_likelihood(arma::vec Z){
+  double z=0.0,diff = 0.0;
+  for(int i=0;i<observable_count;i++){
+    z = Z(i) - target_value(i);
+    diff += z*z;
   }
-  return exp(z1-z2);
-}
-double MCMC::get_likelihood(double z){
-  double diff = z - target_value;
-  return exp(-diff*diff/(2.0*sigma));
+  return exp(-diff/2.0);
 }
 
 void MCMC::step(){
@@ -214,7 +215,7 @@ void MCMC::step(){
     test_position(i) = position(i) + normal()*widths(i);
   }
 }      
-bool MCMC::decide(double z){
+bool MCMC::decide(arma::vec Z){
   double random, LH;
   for(int i=0;i<parameter_count;i++){
     if(test_position(i) < range(i,0)){
@@ -225,7 +226,7 @@ bool MCMC::decide(double z){
     }
   }
 
-  LH = get_likelihood(z);
+  LH = get_likelihood(Z);
   
   if(LH<1.0){
     random = uniform();

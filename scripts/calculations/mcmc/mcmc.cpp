@@ -9,9 +9,10 @@
 
 class MCMC{
 public:
-  double target_value;
+  double max_log_likelihood;
+  int observable_count;
+  arma::vec target_value;
   int parameter_count;
-  double sigma;
   arma::mat range;
 
   arma::vec position;
@@ -22,8 +23,9 @@ public:
   std::default_random_engine generator;
 
   MCMC();
-  void set_target_value(double target_value_new);
-  void set_sigma(double new_sigma);
+
+  void set_target_value(arma::vec new_target_value);
+  void set_observable_count(int new_observable_count);
   void set_parameter_count(int new_parameter_count);
   void set_range(arma::mat new_range);
   void set_position(arma::vec new_position);
@@ -36,8 +38,8 @@ public:
 
   void step();
   double get_likelihood();
-  double get_likelihood(double z);
-  bool decide(double z);
+  double get_likelihood(arma::vec z);
+  bool decide(arma::vec z);
 };
 
 int main(int argc, char* argv[]){
@@ -59,67 +61,75 @@ int main(int argc, char* argv[]){
   std::normal_distribution<double> dist(0.0,1.0);
   std::default_random_engine generator(seed);
 
-  double target_value;
+
   double epsilon=1e-8;
   int parameters = 4;
   int observables = 12;
   int model_runs = 1000;
   int exp_runs = 1;
   int hyperparameteres = 3;
+
+  arma::vec target_value = arma::zeros<arma::mat>(observables);
   arma::mat X = arma::zeros<arma::mat>(model_runs,parameters);
   arma::mat Y_model = arma::zeros<arma::mat>(model_runs,observables);
-  arma::mat y_model = arma::zeros<arma::mat>(model_runs,1);
   arma::mat Y_exp = arma::zeros<arma::mat>(exp_runs,observables);
-  arma::vec hyp = arma::zeros<arma::vec>(hyperparameteres);
+  arma::mat hyp = arma::zeros<arma::mat>(observables,hyperparameteres);
   arma::mat beta = arma::zeros<arma::mat>(observables,parameters+1);
   arma::mat X_s = arma::zeros<arma::mat>(1,parameters);
+
   load_data_file(datafile,X,Y_model);
   load_file(expfile,Y_exp);
   load_file(hpfile,hyp);
   load_beta_file(betafile,beta);
-  y_model = Y_model.col(0);
-  target_value = Y_exp(0,0);
+  target_value = Y_exp.row(0).t();
 
   arma::mat range = arma::zeros<arma::mat>(parameters,2);
   arma::vec position = arma::zeros<arma::vec>(parameters);
   arma::vec widths = arma::zeros<arma::vec>(parameters);
   /*
  0.434935 0.244344 1.16086 1.35566	 -6.21414 -3.81209 -1.6231 -0.054703 0.688187 0.357727 0.0632856 -0.151656 0.0272752 0.0182657 0.018755 -0.000451828
+ 1.102 1.06977 1.46777 0.887588	 3.83952 -0.187607 0.637832 0.540112 -0.257228 0.366589 0.366935 0.144899 0.0324944 0.0108913 0.000779902 -0.00335556
+ 0.115415 0.286386 0.84975 0.988488	 -14.3713 -0.442073 2.40905 2.12669 -0.67151 -0.00544216 0.128274 0.0090414 0.0116861 0.016325 -0.00722896 -0.00787271
   */
 
-  position(0) = 0.434935;
-  position(1) = 0.244344;
-  position(2) = 1.16086;
-  position(3) = 1.35566;
+  position(0) = 1.102;
+  position(1) = 1.06977;
+  position(2) = 1.46777;
+  position(3) = 0.887588;
+
   for(int i=0;i<parameters;i++){
     //position(i) = fabs(dist(generator));
-    widths(i) = (1.5-0.1)/25.0;
+    widths(i) = (1.5-0.1)/100.0;
     range(i,0) = 0.1;
     range(i,1) = 1.5;
   }
-
   emulator gauss(X,hyp,beta,epsilon);
   MCMC random;
-  random.set_target_value(target_value);
+  random.set_observable_count(observables);
   random.set_parameter_count(parameters);
+
+  random.set_target_value(target_value);
   random.set_range(range);
   random.set_position(position);
   random.set_widths(widths);
   random.set_seed(1);
 
-  arma::mat gauss_mat = arma::zeros<arma::mat>(1,parameters+3);
-  double z=0.0;
+  arma::mat gauss_mat = arma::zeros<arma::mat>(1,parameters + observables*3);
   bool stepped;
+  arma::vec z = arma::zeros<arma::vec>(observables);
   double fraction=0.0;
   int trace_count = (int) (0.2*mcmc_runs);
   arma::mat trace = arma::zeros<arma::mat>(trace_count,parameters);
   int j=0,k=0;
   int pts=mcmc_runs/10.0;
+
   for(int i=0;i<mcmc_runs;i++){
     random.step();
     X_s = random.test_position.t();
-    gauss_mat = gauss.emulate(X_s,y_model);
-    z = gauss_mat(0,parameters);
+    gauss_mat = gauss.emulate(X_s,Y_model);
+    for(int l=0;l<observables;l++){
+      z(l) = gauss_mat(0,parameters+l); 
+    }
     stepped = random.decide(z);
     //    printf("TV: %f Z: %f\n", random.target_value, z);
     if(stepped==true){
@@ -149,18 +159,20 @@ int main(int argc, char* argv[]){
 /*SETUP--
 ***************/
 MCMC::MCMC(){
-  this->sigma = 1.0;
+  this->max_log_likelihood = -1000.0;
   set_seed(1);
 }
-void MCMC::set_target_value(double new_target_value){
-  this->target_value = new_target_value;
+void MCMC::set_observable_count(int new_observable_count){
+  this->observable_count = new_observable_count;
+  this->target_value = arma::zeros<arma::vec>(this->observable_count);
 }
-void MCMC::set_sigma(double new_sigma){
-  this->sigma = new_sigma;
+void MCMC::set_target_value(arma::vec new_target_value){
+  this->target_value = new_target_value;
 }
 void MCMC::set_parameter_count(int new_parameter_count){
   this->parameter_count = new_parameter_count;
   this->range = arma::zeros<arma::mat>(this->parameter_count,2);
+
   this->position = arma::zeros<arma::vec>(this->parameter_count);
   this->widths = arma::zeros<arma::vec>(this->parameter_count);
   this->test_position = arma::zeros<arma::vec>(this->parameter_count);
@@ -195,17 +207,13 @@ double MCMC::uniform(){
 
 /*STEP--
 **************/
-double MCMC::get_likelihood(){
-  double z1 = 0.0, z2 = 0.0;
-  for(int i=0;i<parameter_count;i++){
-    z1 += position(i)*position(i);
-    z2 += test_position(i)*test_position(i);
+double MCMC::get_likelihood(arma::vec Z){
+  double z=0.0,diff = 0.0;
+  for(int i=0;i<observable_count;i++){
+    z = Z(i) - target_value(i);
+    diff += z*z;
   }
-  return exp(z1-z2);
-}
-double MCMC::get_likelihood(double z){
-  double diff = z - target_value;
-  return exp(-diff*diff/(2.0*sigma));
+  return exp(-diff/2.0);
 }
 
 void MCMC::step(){
@@ -214,7 +222,7 @@ void MCMC::step(){
     test_position(i) = position(i) + normal()*widths(i);
   }
 }      
-bool MCMC::decide(double z){
+bool MCMC::decide(arma::vec Z){
   double random, LH;
   for(int i=0;i<parameter_count;i++){
     if(test_position(i) < range(i,0)){
@@ -224,9 +232,12 @@ bool MCMC::decide(double z){
       return false;
     }
   }
-
-  LH = get_likelihood(z);
-  
+  LH = get_likelihood(Z);
+  if(log(LH) > this->max_log_likelihood){
+    this-> max_log_likelihood = log(LH);
+    printf("log_LH: %f\n",this->max_log_likelihood);
+    position.print("position");
+  }
   if(LH<1.0){
     random = uniform();
     if(random<LH){

@@ -1,0 +1,16 @@
+#include<iostream>
+#include<armadillo>
+
+
+int main(int argc, char* argv[]){
+  arma::mat X = randu<arma::mat>(5,5);
+  X.print("X");
+  arma::vec a = X.diag();
+  a.print("null");
+  a = X.diag(1);
+  a.print("1");
+  a = X.diag(-2);
+  a.print("-2");
+
+  return 0;
+}

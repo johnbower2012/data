@@ -9,10 +9,10 @@ plt.rc('text', usetex=False)
 
 # you will likely wish to edit these parameters
 npars=4
-nbins=60
-mcmcfilename='mcmctrace_100000.csv'
+nbins=50
+mcmcfilename='mcmctrace3_1000000.csv'
 limitsfilename='mcmc_names.dat'
-outputfilename='mcmc_100000.pdf'
+outputfilename='mcmc3_1000000.pdf'
 #you might wish to edit these
 myfontsize=61.0/(1.0+sqrt(npars))
 marginpadding=1.2*myfontsize/18.0
@@ -146,7 +146,7 @@ for ipanel in range (0,npars):
     
 #  plt.show()
 plt.savefig(outputfilename,format='pdf')
-os.system("open -a Preview mcmc.pdf")
+os.system("open -a Preview mcmc2_1000000.pdf")
 
 
 quit()
